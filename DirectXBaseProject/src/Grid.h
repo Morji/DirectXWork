@@ -3,8 +3,10 @@
 
 #include "GameObject.h"
 #include "d3dUtil.h"
+#include "TerrainLoader.h"
 
 #define CELLSPACING		1.0f
+#define	HEIGHT_FACTOR	0.2f;
 
 class Grid : public GameObject
 {
@@ -12,16 +14,20 @@ public:
 	Grid(void);
 	~Grid(void);
 
-	bool GenerateGrid(ID3D10Device* device, int width, int depth);
+	bool GenerateGrid(int width, int depth);
+	bool GenerateGridFromTGA(char* filename);
 
 private:
-	bool InitializeBuffers(ID3D10Device* device, DWORD* indices,  VertexC* vertices);
+	bool InitializeBuffers(DWORD* indices,  VertexNT* vertices);
 
 	float GetHeight(float,float)const;
+	void  ComputeNormals();				// computes the normals of the terrain on a per-vertex level
 
 private:	
-	DWORD *indices;
-	VertexC *vertices;
+	DWORD			*indices;
+	VertexNT		*vertices;
+	int				gridWidth;
+	int				gridDepth;
 };
 
 #endif

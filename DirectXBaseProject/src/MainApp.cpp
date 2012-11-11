@@ -173,13 +173,13 @@ void MainApp::initApp(){
 
 	// Initialize the model object.
 	//result = cube->InitializeWithTexture(md3dDevice,L"assets/cobbles.jpg", L"assets/cobbles_SPEC.jpg");
-	result = grid->Initialize(md3dDevice);
+	result = grid->InitializeWithTexture(md3dDevice,L"assets/cobbles.jpg",L"assets/cobbles_SPEC.jpg");
 
 	if(!result){
 		MessageBox(getMainWnd(), L"Could not initialize the grid object.", L"Error", MB_OK);
 	}
-	grid->pos = D3DXVECTOR3(2,0,0);
-
+	//grid->GenerateGrid(130,130);
+	grid->GenerateGridFromTGA("assets/heightmap.tga");
 	// Create the light shader object.
 	lightShader = new LightShader();
 
@@ -202,7 +202,7 @@ void MainApp::initApp(){
 	texShader = new TexShader();
 
 	// Initialize the text shader object.
-	result = texShader->Initialize(md3dDevice, getMainWnd(),MULTI);
+	result = texShader->Initialize(md3dDevice, getMainWnd(),REGULAR);
 	if(!result){
 		MessageBox(getMainWnd(), L"Could not initialize the tex shader object.", L"Error", MB_OK);
 	}
@@ -220,16 +220,16 @@ void MainApp::processInput(){
 	}
 
 	if (GetAsyncKeyState('W')){
-		camera->moveBackForward += camMoveFactor;
+		camera->moveBackForward += camMoveFactor*mTimer.getDeltaTime();;
 	}
 	if (GetAsyncKeyState('S')){
-		camera->moveBackForward -= camMoveFactor;
+		camera->moveBackForward -= camMoveFactor*mTimer.getDeltaTime();;
 	}
 	if (GetAsyncKeyState('A')){
-		camera->moveLeftRight -= camMoveFactor;
+		camera->moveLeftRight -= camMoveFactor*mTimer.getDeltaTime();;
 	}
 	if (GetAsyncKeyState('D')){
-		camera->moveLeftRight += camMoveFactor;
+		camera->moveLeftRight += camMoveFactor*mTimer.getDeltaTime();;
 	}
 
 	if (GetAsyncKeyState('F')){
@@ -265,13 +265,14 @@ void MainApp::drawScene(){
 	// Get the world, view, and projection matrices from the camera and d3d objects.
 	camera->GetViewMatrix(mView);
 	//Render the cube
-	cube->Render(md3dDevice,mWVP);
+	//cube->Render(mWVP);
 	//texShader->RenderMultiTexturing(md3dDevice, cube->GetIndexCount(), cube->objMatrix, mView, mProj, camera->GetPosition(), light, cube->GetSpecularTexture(), cube->GetBlendTexture(),
 		//cube->GetDiffuseMap(0),cube->GetDiffuseMap(1),cube->GetDiffuseMap(2));
 
 	//Render the grid
-	grid->Render(md3dDevice,mWVP);
-	colorShader->Render(md3dDevice,grid->GetIndexCount(),grid->objMatrix,mView,mProj);
+	grid->Render(mWVP);
+	texShader->RenderTexturing(md3dDevice,grid->GetIndexCount(),grid->objMatrix,mView,mProj,camera->GetPosition(),light,grid->GetDiffuseTexture(),grid->GetSpecularTexture());
+	//colorShader->Render(md3dDevice,grid->GetIndexCount(),grid->objMatrix,mView,mProj);
 	
 	// We specify DT_NOCLIP, so we do not care about width/height of the rect.
 	RECT R = {5, 5, 0, 0};

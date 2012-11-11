@@ -46,7 +46,7 @@ public:
 																									 WCHAR* diffuseMapRV3Tex);
 	
 	void Shutdown();
-	void Render(ID3D10Device* device, D3DXMATRIX worldMatrix);
+	void Render(D3DXMATRIX worldMatrix);
 
 	ID3D10ShaderResourceView* GetDiffuseTexture();
 	ID3D10ShaderResourceView* GetSpecularTexture();
@@ -58,7 +58,7 @@ public:
 private:
 	
 	void ShutdownBuffers();
-	void RenderBuffers(ID3D10Device* device);
+	void RenderBuffers();
 
 	TextureLoader* specularMap;
 	TextureLoader* diffuseMap;	
@@ -77,11 +77,11 @@ protected:
 	unsigned int stride;
 	unsigned int offset;
 
-	virtual bool InitializeBuffers(ID3D10Device* device, DWORD* indices,  VertexNT* vertices);
-	virtual bool SetupArraysAndInitBuffers(ID3D10Device* device);
+	virtual bool InitializeBuffers(DWORD* indices,  VertexNT* vertices);
+	virtual bool SetupArraysAndInitBuffers();
 
-	bool LoadTexture(ID3D10Device* device, WCHAR* diffuseMapTex, WCHAR* specularMapTex);
-	bool LoadMultiTexture(ID3D10Device* device, WCHAR* specularMapTex, WCHAR* blendMapTex, WCHAR* diffuseMapRV1Tex,
+	bool LoadTexture(WCHAR* diffuseMapTex, WCHAR* specularMapTex);
+	bool LoadMultiTexture(WCHAR* specularMapTex, WCHAR* blendMapTex, WCHAR* diffuseMapRV1Tex,
 																						   WCHAR* diffuseMapRV2Tex,
 																						   WCHAR* diffuseMapRV3Tex);
 	void ReleaseTexture();

@@ -20,6 +20,7 @@
     <ClCompile Include="..\src\LightShader.cpp" />
     <ClCompile Include="..\src\MainApp.cpp" />
     <ClCompile Include="..\src\Shader.cpp" />
+    <ClCompile Include="..\src\TerrainLoader.cpp" />
     <ClCompile Include="..\src\TexShader.cpp" />
     <ClCompile Include="..\src\TextureLoader.cpp" />
   </ItemGroup>
@@ -34,8 +35,10 @@
     <ClInclude Include="..\src\Light.h" />
     <ClInclude Include="..\src\LightShader.h" />
     <ClInclude Include="..\src\Shader.h" />
+    <ClInclude Include="..\src\TerrainLoader.h" />
     <ClInclude Include="..\src\TexShader.h" />
     <ClInclude Include="..\src\TextureLoader.h" />
+    <ClInclude Include="..\src\TgaHeader.h" />
     <ClInclude Include="..\src\Vertex.h" />
   </ItemGroup>
   <ItemGroup>

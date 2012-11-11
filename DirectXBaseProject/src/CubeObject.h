@@ -12,6 +12,6 @@ public:
 	}
 
 protected:
-	bool SetupArraysAndInitBuffers(ID3D10Device* device);
+	bool SetupArraysAndInitBuffers();
 };
 

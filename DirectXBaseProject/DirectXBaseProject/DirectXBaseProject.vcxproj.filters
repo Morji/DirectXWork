@@ -72,6 +72,9 @@
     <ClCompile Include="..\src\Grid.cpp">
       <Filter>Source Files\Terrain</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\TerrainLoader.cpp">
+      <Filter>Source Files\Terrain</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\d3dApp.h">
@@ -111,6 +114,12 @@
       <Filter>Header Files\Shaders</Filter>
     </ClInclude>
     <ClInclude Include="..\src\Grid.h">
+      <Filter>Header Files\Terrain</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\TgaHeader.h">
+      <Filter>Header Files\Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\TerrainLoader.h">
       <Filter>Header Files\Terrain</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,7 +1,7 @@
 #include "CubeObject.h"
 
 
-bool CubeObject::SetupArraysAndInitBuffers(ID3D10Device* device){
+bool CubeObject::SetupArraysAndInitBuffers(){
 
 	// Load the vertex array with data.
 	VertexNT vertices[] = {
@@ -47,7 +47,7 @@ bool CubeObject::SetupArraysAndInitBuffers(ID3D10Device* device){
 	mIndexCount = sizeof(indicesArray)/sizeof(indicesArray[0]);
 
 	//initialize the buffers with the index and vertex data
-	if (!InitializeBuffers(device, indicesArray, vertices))
+	if (!InitializeBuffers(indicesArray, vertices))
 		return false;
 
 	return true;

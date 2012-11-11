@@ -3,7 +3,7 @@
 
 #include "d3dUtil.h"
 
-#define camMoveFactor 0.005f
+#define camMoveFactor 10.0f
 
 class GameCamera
 {

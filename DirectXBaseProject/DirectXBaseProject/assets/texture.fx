@@ -102,7 +102,7 @@ float4 TexturePixelShader(PixelInputType input) : SV_Target
 	float4 spec;
 
 	///MULTITEXTURING
-	if (texType == 1){
+	/*if (texType == 1){
 		spec = gSpecMap.Sample( SampleTypeWrap, input.stretchedUV );
 			
 		// Map [0,1] --> [0,256]
@@ -126,8 +126,8 @@ float4 TexturePixelShader(PixelInputType input) : SV_Target
 
 		//shade*diffuse component
 		return (input.shade*(c1+c2+c3));
-	}
-	else{
+	}*/
+	//else{
 		spec = gSpecMap.Sample( SampleTypeMirror, input.tex );
 		// Map [0,1] --> [0,256]
 		spec.a *= 256.0f;
@@ -140,7 +140,7 @@ float4 TexturePixelShader(PixelInputType input) : SV_Target
 		float3 litColor = ParallelLight(v, gLight, gEyePosW);
     
 		return float4(litColor, diffuse.a);	
-	}
+	//}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
