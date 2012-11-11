@@ -27,7 +27,8 @@ public:
 public:
 	GameObject(): mVertexCount(0), mIndexCount(0), mNumFaces(0), md3dDevice(0), mVB(0), mIB(0), scale(1,1,1),pos(0,0,0),theta(0,0,0)
 	{
-		diffuseMap = specularMap = 0;
+		diffuseMap = specularMap = blendMap = 0;
+		for (int i = 0; i < 3; i++) diffuseMapRV[i] = 0;
 	}
 	virtual ~GameObject()
 	{
@@ -73,7 +74,10 @@ protected:
 	ID3D10Buffer* mVB;
 	ID3D10Buffer* mIB;
 
-	bool InitializeBuffers(ID3D10Device* device, DWORD* indices,  Vertex* vertices);
+	unsigned int stride;
+	unsigned int offset;
+
+	virtual bool InitializeBuffers(ID3D10Device* device, DWORD* indices,  VertexNT* vertices);
 	virtual bool SetupArraysAndInitBuffers(ID3D10Device* device);
 
 	bool LoadTexture(ID3D10Device* device, WCHAR* diffuseMapTex, WCHAR* specularMapTex);

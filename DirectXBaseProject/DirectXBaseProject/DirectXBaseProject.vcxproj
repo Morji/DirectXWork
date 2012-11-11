@@ -16,6 +16,7 @@
     <ClCompile Include="..\src\GameCamera.cpp" />
     <ClCompile Include="..\src\GameObject.cpp" />
     <ClCompile Include="..\src\GameTimer.cpp" />
+    <ClCompile Include="..\src\Grid.cpp" />
     <ClCompile Include="..\src\LightShader.cpp" />
     <ClCompile Include="..\src\MainApp.cpp" />
     <ClCompile Include="..\src\Shader.cpp" />
@@ -29,6 +30,7 @@
     <ClInclude Include="..\src\GameCamera.h" />
     <ClInclude Include="..\src\GameObject.h" />
     <ClInclude Include="..\src\GameTimer.h" />
+    <ClInclude Include="..\src\Grid.h" />
     <ClInclude Include="..\src\Light.h" />
     <ClInclude Include="..\src\LightShader.h" />
     <ClInclude Include="..\src\Shader.h" />

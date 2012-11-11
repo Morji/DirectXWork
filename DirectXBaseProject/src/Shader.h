@@ -35,6 +35,8 @@ protected:
 	ID3D10EffectMatrixVariable* mWorldMatrix;
 	ID3D10EffectMatrixVariable* mViewMatrix;
 	ID3D10EffectMatrixVariable* mProjectionMatrix;
+
+	ID3D10EffectMatrixVariable* mWVPMatrix;
 };
 
 

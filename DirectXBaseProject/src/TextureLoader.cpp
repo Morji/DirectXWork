@@ -2,7 +2,7 @@
 
 
 TextureLoader::TextureLoader(void){
-	texture = 0;
+	texture = NULL;
 }
 
 TextureLoader::~TextureLoader(void){
@@ -22,10 +22,7 @@ bool TextureLoader::Initialize(ID3D10Device* device, WCHAR* filename){
 
 void TextureLoader::Shutdown(){
 	// Release the texture resource.
-	if(texture){
-		texture->Release();
-		texture = 0;
-	}
+	ReleaseCOM(texture);
 	return;
 }
 

@@ -24,8 +24,7 @@ bool Shader::Initialize(ID3D10Device* device, HWND hwnd)
 
 	// Initialize the shader that will be used to draw the triangle.
 	result = InitializeShader(device, hwnd, L"assets/color2.fx");
-	if(!result)
-	{
+	if(!result){
 		return false;
 	}
 
@@ -33,8 +32,7 @@ bool Shader::Initialize(ID3D10Device* device, HWND hwnd)
 }
 
 //The Shutdown function will call the shutdown of the shader.
-void Shader::Shutdown()
-{
+void Shader::Shutdown(){
 	// Shutdown the shader effect.
 	ShutdownShader();
 }
@@ -133,8 +131,7 @@ bool Shader::InitializeShader(ID3D10Device* device, HWND hwnd, WCHAR* filename)
 	// Create the input lay9out.
 	result = device->CreateInputLayout(polygonLayout, numElements, passDesc.pIAInputSignature, passDesc.IAInputSignatureSize, 
 					   &mLayout);
-	if(FAILED(result))
-	{
+	if(FAILED(result)){
 		return false;
 	}
 
@@ -151,29 +148,20 @@ bool Shader::InitializeShader(ID3D10Device* device, HWND hwnd, WCHAR* filename)
 
 //ShutdownShader releases the interfaces and pointers that were setup in the InitializeShader function.
 
-void Shader::ShutdownShader()
-{
+void Shader::ShutdownShader(){
 	// Release the pointers to the matrices inside the shader.
 	mWorldMatrix = 0;
 	mViewMatrix = 0;
 	mProjectionMatrix = 0;
 
 	// Release the pointer to the shader layout.
-	if(mLayout)
-	{
-		mLayout->Release();
-		mLayout = 0;
-	}
+	ReleaseCOM(mLayout);
 
 	// Release the pointer to the shader technique.
 	mTechnique = 0;
 
 	// Release the pointer to the shader.
-	if(mEffect)
-	{
-		mEffect->Release();
-		mEffect = 0;
-	}
+	ReleaseCOM(mEffect);
 }
 
 /*The OutputShaderErrorMessage writes out error messages that are generating when compiling 
@@ -194,8 +182,7 @@ void Shader::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND hwnd, WCHAR
 	fout.open("shader-error.txt");
 
 	// Write out the error message.
-	for(i=0; i<bufferSize; i++)
-	{
+	for(i=0; i<bufferSize; i++){
 		fout << compileErrors[i];
 	}
 
@@ -203,8 +190,7 @@ void Shader::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND hwnd, WCHAR
 	fout.close();
 
 	// Release the error message.
-	errorMessage->Release();
-	errorMessage = 0;
+	ReleaseCOM(errorMessage);
 
 	// Pop a message up on the screen to notify the user to check the text file for compile errors.
 	MessageBox(hwnd, L"Error compiling shader.  Check shader-error.txt for message.", shaderFilename, MB_OK);

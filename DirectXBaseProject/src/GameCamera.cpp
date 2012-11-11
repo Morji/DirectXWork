@@ -74,11 +74,6 @@ void GameCamera::Render()
 	// Setup where the camera is looking by default.
 	lookAt = D3DXVECTOR3(0,0,1);
 
-	// Set the yaw (Y axis), pitch (X axis), and roll (Z axis) rotations in radians.
-	//pitch = rotation.x * 0.0174532925f;
-	//yaw   = rotation.y * 0.0174532925f;
-	//roll  = rotation.z * 0.0174532925f;
-
 	// Create the rotation matrix from the yaw, pitch, and roll values.
 	D3DXMatrixRotationYawPitchRoll(&rotationMatrix, yaw, pitch, 0);
 

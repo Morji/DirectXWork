@@ -16,6 +16,7 @@
 #include "Light.h"
 #include "LightShader.h"
 #include "TexShader.h"
+#include "Grid.h"
 
 class MainApp : public D3DApp
 {
@@ -40,14 +41,19 @@ private:
  
 private:
 
-	Light light;
-	int lightType; // 0 (parallel), 1 (point), 2 (spot)
+	Light			light;
+	int				lightType; // 0 (parallel), 1 (point), 2 (spot)
 
-	CubeObject* cube;
-	GameCamera* camera;
-	TexShader*	texShader;
-	LightShader* lightShader;
-	float aspectRatio;
+	CubeObject		*cube;
+	Grid			*grid;
+
+	GameCamera		*camera;
+
+	TexShader		*texShader;
+	LightShader		*lightShader;
+	Shader			*colorShader;
+
+	float			aspectRatio;
 
 	ID3D10RasterizerState* pRasterizer;
 
@@ -90,12 +96,13 @@ MainApp::MainApp(HINSTANCE hInstance)
 	light.diffuse  = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
 	light.specular = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
 
-
 	//initialize variables to null
 	cube = NULL;
+	grid = NULL;
 	camera = NULL;
 	lightShader = NULL;	
 	texShader = NULL;
+	colorShader = NULL;
 }
 
 MainApp::~MainApp(){
@@ -109,16 +116,29 @@ MainApp::~MainApp(){
 		lightShader = NULL;
 	}
 
+	if (colorShader){
+		colorShader->Shutdown();
+		delete colorShader;
+		colorShader = NULL;
+	}
+
 	if(texShader){
 		texShader->Shutdown();
 		delete texShader;
 		texShader = NULL;
 	}
+
 	// Release the model object.
 	if(cube){
 		cube->Shutdown();
 		delete cube;
 		cube = NULL;
+	}
+
+	if (grid){
+		grid->Shutdown();
+		delete grid;
+		grid = NULL;
 	}
 	// Release the camera object.
 	if(camera){
@@ -139,33 +159,51 @@ void MainApp::initApp(){
 
 	cube = new CubeObject();
 
+	grid = new Grid();
+
 	// Initialize the model object.
 	//result = cube->InitializeWithTexture(md3dDevice,L"assets/cobbles.jpg", L"assets/cobbles_SPEC.jpg");
 	result = cube->InitializeWithMultiTexture(md3dDevice,L"assets/defaultspec.dds", L"assets/blendmap.jpg",L"assets/ground0.dds",
 																									   L"assets/grass0.dds",
 																									   L"assets/stone2.dds");
-	if(!result)
-	{
-		MessageBox(getMainWnd(), L"Could not initialize the model object.", L"Error", MB_OK);
+	if(!result){
+		MessageBox(getMainWnd(), L"Could not initialize the cube object.", L"Error", MB_OK);
 	}
 	cube->pos = D3DXVECTOR3(0,0,0);
+
+	// Initialize the model object.
+	//result = cube->InitializeWithTexture(md3dDevice,L"assets/cobbles.jpg", L"assets/cobbles_SPEC.jpg");
+	result = grid->Initialize(md3dDevice);
+
+	if(!result){
+		MessageBox(getMainWnd(), L"Could not initialize the grid object.", L"Error", MB_OK);
+	}
+	grid->pos = D3DXVECTOR3(2,0,0);
+
 	// Create the light shader object.
 	lightShader = new LightShader();
 
-	// Initialize the color shader object.
+	// Initialize the light shader object.
 	result = lightShader->Initialize(md3dDevice, getMainWnd());
-	if(!result)
-	{
-		MessageBox(getMainWnd(), L"Could not initialize the shader object.", L"Error", MB_OK);
+	if(!result){
+		MessageBox(getMainWnd(), L"Could not initialize the light shader object.", L"Error", MB_OK);
+	}
+
+	// Create the color shader object.
+	colorShader = new Shader();
+
+	// Initialize the light shader object.
+	result = colorShader->Initialize(md3dDevice, getMainWnd());
+	if(!result){
+		MessageBox(getMainWnd(), L"Could not initialize the color shader object.", L"Error", MB_OK);
 	}
 
 	// Create the text shader object.
 	texShader = new TexShader();
 
-	// Initialize the color shader object.
+	// Initialize the text shader object.
 	result = texShader->Initialize(md3dDevice, getMainWnd(),MULTI);
-	if(!result)
-	{
+	if(!result){
 		MessageBox(getMainWnd(), L"Could not initialize the tex shader object.", L"Error", MB_OK);
 	}
 
@@ -194,26 +232,6 @@ void MainApp::processInput(){
 		camera->moveLeftRight += camMoveFactor;
 	}
 
-	/*if (GetAsyncKeyState('W')){
-		if (GetAsyncKeyState(VK_SHIFT)){
-			cube->pos += D3DXVECTOR3(0,0,0.001f);
-		}
-		cube->pos += D3DXVECTOR3(0,0.001f,0);
-	}
-	if (GetAsyncKeyState('S')){
-		if (GetAsyncKeyState(VK_SHIFT)){
-			cube->pos += D3DXVECTOR3(0,0,-0.001f);
-		}
-		cube->pos += D3DXVECTOR3(0,-0.001f,0);
-	}
-	if (GetAsyncKeyState('A')){
-		cube->pos += D3DXVECTOR3(-0.001f,0,0);
-		
-	}
-	if (GetAsyncKeyState('D')){
-		cube->pos += D3DXVECTOR3(0.001f,0,0);		
-	}*/
-
 	if (GetAsyncKeyState('F')){
 		cube->theta += D3DXVECTOR3(0,1.5f,0)*mTimer.getDeltaTime();
 	}
@@ -227,14 +245,7 @@ void MainApp::onResize(){
 }
 
 void MainApp::updateScene(float dt){
-	D3DApp::updateScene(dt);
-
-	// Build the view matrix.
-	D3DXVECTOR3 pos(0.0f, 0.0f, -10.0f);
-	D3DXVECTOR3 target(0.0f, 0.0f, 1.0f);
-	D3DXVECTOR3 up(0.0f, 1.0f, 0.0f);
-	D3DXMatrixLookAtLH(&mView, &pos, &target, &up);
-	
+	D3DApp::updateScene(dt);	
 }
 
 void MainApp::drawScene(){
@@ -252,14 +263,15 @@ void MainApp::drawScene(){
 	camera->Render();
 
 	// Get the world, view, and projection matrices from the camera and d3d objects.
-	camera->GetViewMatrix(mView);	
+	camera->GetViewMatrix(mView);
+	//Render the cube
 	cube->Render(md3dDevice,mWVP);
-	
-	// Render the model using the color shader and the model matrix.
-	//lightShader->Render(md3dDevice, cube->GetIndexCount(), cube->objMatrix, mView, mProj, camera->GetPosition(), light, lightType);
-	//texShader->RenderTexturing(md3dDevice, cube->GetIndexCount(), cube->objMatrix, mView, mProj, camera->GetPosition(), light, cube->GetDiffuseTexture(), cube->GetSpecularTexture());
-	texShader->RenderMultiTexturing(md3dDevice, cube->GetIndexCount(), cube->objMatrix, mView, mProj, camera->GetPosition(), light, cube->GetSpecularTexture(), cube->GetBlendTexture(),
-		cube->GetDiffuseMap(0),cube->GetDiffuseMap(1),cube->GetDiffuseMap(2));
+	//texShader->RenderMultiTexturing(md3dDevice, cube->GetIndexCount(), cube->objMatrix, mView, mProj, camera->GetPosition(), light, cube->GetSpecularTexture(), cube->GetBlendTexture(),
+		//cube->GetDiffuseMap(0),cube->GetDiffuseMap(1),cube->GetDiffuseMap(2));
+
+	//Render the grid
+	grid->Render(md3dDevice,mWVP);
+	colorShader->Render(md3dDevice,grid->GetIndexCount(),grid->objMatrix,mView,mProj);
 	
 	// We specify DT_NOCLIP, so we do not care about width/height of the rect.
 	RECT R = {5, 5, 0, 0};
@@ -271,9 +283,9 @@ void MainApp::drawScene(){
 void MainApp::buildRasterizer(){
 
 	D3D10_RASTERIZER_DESC rasterizerState;
-	rasterizerState.CullMode = D3D10_CULL_NONE;
+	rasterizerState.CullMode = D3D10_CULL_BACK;
 	rasterizerState.FillMode = D3D10_FILL_SOLID;
-	rasterizerState.FrontCounterClockwise = true;
+	rasterizerState.FrontCounterClockwise = false;
 	rasterizerState.DepthBias = false;
 	rasterizerState.DepthBiasClamp = 0;
 	rasterizerState.SlopeScaledDepthBias = 0;

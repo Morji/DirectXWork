@@ -88,7 +88,7 @@ void GameObject::Render(ID3D10Device* device, D3DXMATRIX worldMatrix)
 bool GameObject::SetupArraysAndInitBuffers(ID3D10Device* device){
 
 	//Create vertex array
-	Vertex vertices[] = {
+	VertexNT vertices[] = {
 		{D3DXVECTOR3(-1.0f, -1.0f, 0.0f), Vector2f(0.0f, 1.0f)},			
 		{D3DXVECTOR3(-1.0f, +1.0f, 0.0f), Vector2f(0.5f, 0.0f)},
 		{D3DXVECTOR3(+1.0f, +1.0f, 0.0f), Vector2f(1.0f, 1.0f)}
@@ -103,7 +103,7 @@ bool GameObject::SetupArraysAndInitBuffers(ID3D10Device* device){
 	mVertexCount = sizeof(vertices)/sizeof(vertices[0]);
 	// Set the number of indices in the index array.
 	mIndexCount = sizeof(indices)/sizeof(indices[0]);
-
+	
 	//initialize the buffers
 	if (!InitializeBuffers(device, indices, vertices))
 		return false;
@@ -112,7 +112,7 @@ bool GameObject::SetupArraysAndInitBuffers(ID3D10Device* device){
 }
 
 //The InitializeBuffers function is where we handle creating the vertex and index buffers. 
-bool GameObject::InitializeBuffers(ID3D10Device* device, DWORD* indices,  Vertex* vertices){
+bool GameObject::InitializeBuffers(ID3D10Device* device, DWORD* indices, VertexNT* vertices){
 
 	D3D10_BUFFER_DESC vertexBufferDesc, indexBufferDesc;
 	D3D10_SUBRESOURCE_DATA vertexData, indexData;
@@ -120,7 +120,7 @@ bool GameObject::InitializeBuffers(ID3D10Device* device, DWORD* indices,  Vertex
 
 	// Set up the description of the vertex buffer.
 	vertexBufferDesc.Usage = D3D10_USAGE_DEFAULT;
-	vertexBufferDesc.ByteWidth = sizeof(Vertex) * mVertexCount;
+	vertexBufferDesc.ByteWidth = sizeof(&vertices) * mVertexCount;
 	vertexBufferDesc.BindFlags = D3D10_BIND_VERTEX_BUFFER;
 	vertexBufferDesc.CPUAccessFlags = 0;
 	vertexBufferDesc.MiscFlags = 0;
@@ -148,10 +148,11 @@ bool GameObject::InitializeBuffers(ID3D10Device* device, DWORD* indices,  Vertex
 	// Create the index buffer.
 	result = device->CreateBuffer(&indexBufferDesc, &indexData, &mIB);
 
-	if(FAILED(result))
-	{
+	if(FAILED(result)){
 		return false;
 	}
+
+	stride = sizeof(VertexNT); //set the stride of the buffers to be the size of the vertexNT
 
 	return true;
 }
@@ -225,41 +226,27 @@ bool GameObject::LoadMultiTexture(ID3D10Device* device, WCHAR* specularMapTex, W
 
 void GameObject::ReleaseTexture(){
 	// Release the texture object.
-	if(diffuseMap){
-		diffuseMap->Shutdown();
-		delete diffuseMap;
-		diffuseMap = 0;
+	if (diffuseMap)	{diffuseMap->Shutdown();	delete diffuseMap;	diffuseMap = 0;}
+	if (specularMap){specularMap->Shutdown();	delete specularMap; specularMap = 0;}
+	if (blendMap)	{blendMap->Shutdown();		delete blendMap;	blendMap = 0;}
+
+	for (int i = 0; i < 3; i++){ 
+		if (diffuseMapRV[i]){diffuseMapRV[i]->Shutdown(); delete diffuseMapRV[i]; diffuseMapRV[i] = 0;}
 	}
-	if (specularMap){
-		specularMap->Shutdown();
-		delete specularMap;
-		specularMap = 0;
-	}
+	
 }
 
 //The ShutdownBuffers function just releases the vertex buffer and index buffer that were created in the InitializeBuffers function.
 void GameObject::ShutdownBuffers(){
 	// Release the index buffer.
-	if(mIB)
-	{
-		mIB->Release();
-		mIB = 0;
-	}
-
+	ReleaseCOM(mIB);
 	// Release the vertex buffer.
-	if(mVB)
-	{
-		mVB->Release();
-		mVB = 0;
-	}
+	ReleaseCOM(mVB);
 }
 
 void GameObject::RenderBuffers(ID3D10Device* device){
-	unsigned int stride;
-	unsigned int offset;
 
 	// Set vertex buffer stride and offset.
-	stride = sizeof(Vertex); 
 	offset = 0;
     
 	// Set the vertex buffer to active in the input assembler so it can be rendered.

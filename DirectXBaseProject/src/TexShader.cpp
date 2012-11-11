@@ -77,6 +77,10 @@ void TexShader::SetShaderParametersTexturing(int indexCount,
 									ID3D10ShaderResourceView *specularMap)
 {
 
+	// Set the wvp matrix inside the shader
+	D3DXMATRIX mWVP = worldMatrix*viewMatrix*projectionMatrix;
+	mWVPMatrix->SetMatrix((float*)&mWVP);
+
 	// Set the world matrix variable inside the shader.
 	mWorldMatrix->SetMatrix((float*)&worldMatrix);
 
@@ -114,6 +118,10 @@ void TexShader::SetShaderParametersMultiTexturing(int indexCount,
 											ID3D10ShaderResourceView* diffuseMapRV2,
 											ID3D10ShaderResourceView* diffuseMapRV3)
 {
+
+	D3DXMATRIX mWVP = worldMatrix*viewMatrix;
+	mWVP *= projectionMatrix;
+	mWVPMatrix->SetMatrix((float*)&mWVP);
 
 	// Set the world matrix variable inside the shader.
 	mWorldMatrix->SetMatrix((float*)&worldMatrix);
@@ -223,8 +231,9 @@ bool TexShader::InitializeShader(ID3D10Device* device, HWND hwnd, WCHAR* filenam
 	This way when we set a matrix from the main app inside the shader easily by just using these pointers.*/
 
 	// Get pointers to the three matrices inside the shader so we can update them from this class.
-	mWorldMatrix = mEffect->GetVariableByName("worldMatrix")->AsMatrix();
-	mViewMatrix = mEffect->GetVariableByName("viewMatrix")->AsMatrix();
+	mWVPMatrix =	mEffect->GetVariableByName("wvpMatrix")->AsMatrix();
+	mWorldMatrix =	mEffect->GetVariableByName("worldMatrix")->AsMatrix();
+	mViewMatrix =	mEffect->GetVariableByName("viewMatrix")->AsMatrix();
 	mProjectionMatrix = mEffect->GetVariableByName("projectionMatrix")->AsMatrix();
 
 	mEyePosVar		= mEffect->GetVariableByName("gEyePosW");

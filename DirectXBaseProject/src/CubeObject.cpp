@@ -4,7 +4,7 @@
 bool CubeObject::SetupArraysAndInitBuffers(ID3D10Device* device){
 
 	// Load the vertex array with data.
-	Vertex vertices[] = {
+	VertexNT vertices[] = {
 		//POS							//NORMAL					   //TEX
 		//back
 		{Vector3f(-1.0f, -1.0f, -1.0f),	Vector3f(-1.0f, -1.0f, -1.0f), Vector2f(0.0f, 1.0f)}, // Bottom left.	

@@ -18,6 +18,8 @@ cbuffer cbPerObject{
 	float4x4	worldMatrix;
 	float4x4	viewMatrix;
 	float4x4	projectionMatrix;
+
+	float4x4	wvpMatrix;
 	
 };
 // Nonnumeric values cannot be added to a cbuffer.
@@ -69,13 +71,11 @@ PixelInputType TextureVertexShader(VertexInputType input){
     PixelInputType output;       
 
     // Calculate the position of the vertex against the world, view, and projection matrices.
-    output.position = mul(float4(input.position, 1.0f), worldMatrix);
-	output.normal	= mul(float4(input.normal, 0.0f), worldMatrix);		
+    output.position = mul(float4(input.position, 1.0f), wvpMatrix);
+	output.normal	= mul(float4(input.normal, 0.0f), wvpMatrix);		
 
-    output.position = mul(output.position, viewMatrix);
-    output.position = mul(output.position, projectionMatrix);
-
-	output.positionW = mul(float4(input.position, 1.0f), worldMatrix);
+    //output.position = mul(output.position, viewMatrix);
+    //output.position = mul(output.position, projectionMatrix);	
 
 	//if multitexturing
 	if (texType == 1){
@@ -85,6 +85,7 @@ PixelInputType TextureVertexShader(VertexInputType input){
 	}
 	else{
 		// Store the texture coordinates for the pixel shader.
+		output.positionW = mul(float4(input.position, 1.0f), wvpMatrix);
 		output.tex = input.tex;
     }
     return output;

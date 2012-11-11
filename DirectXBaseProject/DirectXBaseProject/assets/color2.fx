@@ -16,7 +16,7 @@ struct VertexInputType
 struct PixelInputType
 {
     float4 position : SV_POSITION;
-    float4 color : COLOR;
+    float4 color : COLOR0;
 };
 
 
@@ -55,7 +55,8 @@ technique10 ColorTechnique
     pass pass0
     {
         SetVertexShader(CompileShader(vs_4_0, ColorVertexShader()));
+		SetGeometryShader(NULL);
         SetPixelShader(CompileShader(ps_4_0, ColorPixelShader()));
-        SetGeometryShader(NULL);		
+       		
     }
 }
