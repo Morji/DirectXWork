@@ -8,6 +8,8 @@
 #define CELLSPACING		1.0f
 #define	HEIGHT_FACTOR	0.2f;
 
+const int TEXTURE_REPEAT = 1;	//how often the texture will repeat over the terrain grid
+
 class Grid : public GameObject
 {
 public:
@@ -22,6 +24,7 @@ private:
 
 	float GetHeight(float,float)const;
 	void  ComputeNormals();				// computes the normals of the terrain on a per-vertex level
+	void  ComputeTextureCoords();		// computes the texture coordinates of the terrain
 
 private:	
 	DWORD			*indices;

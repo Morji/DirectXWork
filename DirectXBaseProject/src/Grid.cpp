@@ -39,29 +39,12 @@ bool Grid::GenerateGridFromTGA(char* filename){
 			float x = -halfWidth + j*dx;
 			// Graph of this function looks like a mountain range.
 			float y = terrainLoader->GetHeight(i,j)*HEIGHT_FACTOR;
-
 			vertices[i*depth+j].pos = Vector3f(x, y, z);
-			if (j%8 == 0)
-				vertices[i*depth+j].texC = Vector2f(0.0f,0.0f);
-			else if (j%8 == 1)
-				vertices[i*depth+j].texC = Vector2f(1.0f,0.0f);
-			else if (j%8 == 2)
-				vertices[i*depth+j].texC = Vector2f(0.0f,1.0f);
-			else if (j%8 == 3)
-				vertices[i*depth+j].texC = Vector2f(0.0f,1.0f);
-
-			else if (j%8 == 4)
-				vertices[i*depth+j].texC = Vector2f(1.0f,0.0f);
-			else if (j%8 == 5)
-				vertices[i*depth+j].texC = Vector2f(1.0f,1.0f);
-			else if (j%8 == 6)
-				vertices[i*depth+j].texC = Vector2f(0.0f,0.0f);
-			else if (j%8 == 7)
-				vertices[i*depth+j].texC = Vector2f(1.0f,0.0f);
 		}
 	}
 
 	ComputeNormals();
+	ComputeTextureCoords();
 	
 	// Iterate over each quad and compute indices.
 	mIndexCount = ((width-1)*(depth-1)*6);
@@ -69,6 +52,9 @@ bool Grid::GenerateGridFromTGA(char* filename){
 	int k = 0;
 	for(DWORD i = 0; i < width-1; ++i){
 		for(DWORD j = 0; j < depth-1; ++j){
+			// Upper left.
+			//tv = vertices[index3].texC.y;
+
 			indices[k] = i*depth+j;
 			indices[k+1] = i*depth+j+1;
 			indices[k+2] = (i+1)*depth+j;
@@ -146,10 +132,6 @@ bool Grid::GenerateGrid(int width, int depth){
 	return true;
 }
 
-float Grid::GetHeight(float x, float z)const{
-	return 0.3f*( z*sinf(0.1f*x) + x*cosf(0.1f*z) );
-}
-
 //compute the vertex normals
 void Grid::ComputeNormals(){
 
@@ -158,20 +140,16 @@ void Grid::ComputeNormals(){
 			Vector3f v1,v2,v3,v4,v12,v23,v34,v41,v;
 			v1 = v2 = v3 = v4 = v12 = v23 = v34 = v41 = v = Vector3f(0.0f,0.0f,0.0f);
 			//grab 2 vectors for this
-			if (j != gridWidth - 1)
-			{
+			if (j != gridWidth - 1){
 				v1 = Vector3f(vertices[i*gridDepth+j+1].pos-vertices[i*gridDepth+j].pos);
 			}
-			if (i != gridWidth - 1)
-			{
+			if (i != gridWidth - 1){
 				v2 = Vector3f(vertices[(i+1)*gridDepth+j].pos-vertices[i*gridDepth+j].pos);
 			}
-			if (j > 0)
-			{
+			if (j > 0){
 				v3 = Vector3f(vertices[i*gridDepth+j-1].pos-vertices[i*gridDepth+j].pos);
 			}
-			if (i > 0)
-			{
+			if (i > 0){
 				v4 = Vector3f(vertices[(i-1)*gridDepth+j].pos-vertices[i*gridDepth+j].pos);
 			}
 
@@ -203,6 +181,61 @@ void Grid::ComputeNormals(){
 			D3DXVec3Normalize(&v,&v);
 
 			vertices[i*gridDepth+j].normal = v;			
+		}
+	}
+}
+
+void Grid::ComputeTextureCoords(){
+
+	int incrementCount, i, j, tuCount, tvCount;
+	float incrementValue, tuCoordinate, tvCoordinate;
+
+	// Calculate how much to increment the texture coordinates by.
+	incrementValue = (float)TEXTURE_REPEAT / (float)gridDepth;
+
+	// Calculate how many times to repeat the texture.
+	incrementCount = gridDepth / TEXTURE_REPEAT;
+
+	// Initialize the tu and tv coordinate values.
+	tuCoordinate = 0.0f;
+	tvCoordinate = 1.0f;
+
+	// Initialize the tu and tv coordinate indexes.
+	tuCount = 0;
+	tvCount = 0;
+
+	// Loop through the entire height map and calculate the tu and tv texture coordinates for each vertex.
+	for(i=0; i<gridWidth; i++)
+	{
+		for(j=0; j<gridDepth; j++)
+		{
+			// Store the texture coordinate in the height map.
+			//m_heightMap[(gridWidth * i) + j].tu = tuCoordinate;
+			//m_heightMap[(gridWidth * i) + j].tv = tvCoordinate;
+
+			vertices[i*gridDepth+j].texC = Vector2f(tuCoordinate,tvCoordinate);
+
+			// Increment the tu texture coordinate by the increment value and increment the index by one.
+			tuCoordinate += incrementValue;
+			tuCount++;
+
+			// Check if at the far right end of the texture and if so then start at the beginning again.
+			if(tuCount == incrementCount)
+			{
+				tuCoordinate = 0.0f;
+				tuCount = 0;
+			}
+		}
+
+		// Increment the tv texture coordinate by the increment value and increment the index by one.
+		tvCoordinate -= incrementValue;
+		tvCount++;
+
+		// Check if at the top of the texture and if so then start at the bottom again.
+		if(tvCount == incrementCount)
+		{
+			tvCoordinate = 1.0f;
+			tvCount = 0;
 		}
 	}
 }
@@ -252,4 +285,9 @@ bool Grid::InitializeBuffers(DWORD* indices,  VertexNT* vertices){
 
 	return true;
 	
+}
+
+
+float Grid::GetHeight(float x, float z)const{
+	return 0.3f*( z*sinf(0.1f*x) + x*cosf(0.1f*z) );
 }
