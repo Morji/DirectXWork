@@ -21,7 +21,7 @@ bool TexShader::Initialize(ID3D10Device* device, HWND hwnd, TEXTURETYPE texType)
 		result = InitializeShader(device, hwnd, L"assets/texture.fx");
 		break;
 	case MULTI:
-		result = InitializeShader(device, hwnd, L"assets/texture.fx");
+		result = InitializeShader(device, hwnd, L"assets/multitexture.fx");
 		break;
 	}
 
@@ -96,9 +96,6 @@ void TexShader::SetShaderParametersTexturing(int indexCount,
 	// Set the light variable inside the shader
 	mLightVar->SetRawValue(&lightVar, 0, sizeof(Light));
 
-	// Set the tex type to be 0, since we are not using multitexturing
-	mTexType->SetInt(0);
-
 	// Set the diffuse map shader var
 	mDiffuseMap->SetResource(diffuseMap);
 
@@ -137,9 +134,6 @@ void TexShader::SetShaderParametersMultiTexturing(int indexCount,
 
 	// Set the light variable inside the shader
 	mLightVar->SetRawValue(&lightVar, 0, sizeof(Light));
-
-	// Set the tex type to be 1, since we are using multitexturing
-	mTexType->SetInt(1);
 
 	// Set the diffuse map shader var
 	mSpecularMap->SetResource(specularMap);
@@ -238,7 +232,6 @@ bool TexShader::InitializeShader(ID3D10Device* device, HWND hwnd, WCHAR* filenam
 
 	mEyePosVar		= mEffect->GetVariableByName("gEyePosW");
 	mLightVar		= mEffect->GetVariableByName("gLight");
-	mTexType		= mEffect->GetVariableByName("texType")->AsScalar();
 	mDiffuseMap		= mEffect->GetVariableByName("gDiffuseMap")->AsShaderResource();
 	mSpecularMap	= mEffect->GetVariableByName("gSpecMap")->AsShaderResource();
 	mBlendMap		= mEffect->GetVariableByName("gBlendMap")->AsShaderResource();

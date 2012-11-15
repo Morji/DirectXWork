@@ -60,7 +60,7 @@
 // Convenience macro for releasing COM objects.
 //*****************************************************************************
 
-#define ReleaseCOM(x) { if(x){ x->Release();x = 0; } }
+#define ReleaseCOM(x) { if(x){ x->Release();x = nullptr; } }
 
 
 //*****************************************************************************

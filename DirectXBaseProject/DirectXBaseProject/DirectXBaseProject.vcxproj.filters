@@ -129,5 +129,6 @@
     <None Include="assets\color2.fx" />
     <None Include="assets\lighthelper.fx" />
     <None Include="assets\texture.fx" />
+    <None Include="assets\multitexture.fx" />
   </ItemGroup>
 </Project>

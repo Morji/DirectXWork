@@ -3,13 +3,22 @@
 
 Grid::Grid(void)
 {
+	vertices = nullptr;
+	indices = nullptr;
 }
 
 
 Grid::~Grid(void)
 {
 	Shutdown();
-	
+	if (vertices){
+		delete [] vertices;
+		vertices = nullptr;		
+	}
+	if (indices){
+		delete [] indices;
+		indices = nullptr;		
+	}
 }
 
 bool Grid::GenerateGridFromTGA(char* filename){
@@ -19,27 +28,24 @@ bool Grid::GenerateGridFromTGA(char* filename){
 		return false;
 	}
 
-	int width = terrainLoader->GetWidth();
-	int depth = terrainLoader->GetDepth();
+	gridWidth = terrainLoader->GetWidth();
+	gridDepth = terrainLoader->GetDepth();
 
-	gridWidth = width;
-	gridDepth = depth;
-
-	mVertexCount = (width*depth);
+	mVertexCount = (gridWidth*gridDepth);
 	vertices = new VertexNT[mVertexCount];
 
 	float dx = CELLSPACING;
-	float halfWidth = (width-1)*dx*0.5f;
-	float halfDepth = (depth-1)*dx*0.5f;
+	float halfWidth = (gridWidth-1)*dx*0.5f;
+	float halfDepth = (gridDepth-1)*dx*0.5f;
 
-	for(DWORD i = 0; i < width; ++i){
+	for(DWORD i = 0; i < gridWidth; ++i){
 		float z = halfDepth - i*dx;
 
-		for(DWORD j = 0; j < depth; ++j){
+		for(DWORD j = 0; j < gridDepth; ++j){
 			float x = -halfWidth + j*dx;
 			// Graph of this function looks like a mountain range.
 			float y = terrainLoader->GetHeight(i,j)*HEIGHT_FACTOR;
-			vertices[i*depth+j].pos = Vector3f(x, y, z);
+			vertices[i*gridDepth+j].pos = Vector3f(x, y, z);
 		}
 	}
 
@@ -47,21 +53,20 @@ bool Grid::GenerateGridFromTGA(char* filename){
 	ComputeTextureCoords();
 	
 	// Iterate over each quad and compute indices.
-	mIndexCount = ((width-1)*(depth-1)*6);
+	mIndexCount = ((gridWidth-1)*(gridDepth-1)*6);
 	indices = new DWORD[mIndexCount];
 	int k = 0;
-	for(DWORD i = 0; i < width-1; ++i){
-		for(DWORD j = 0; j < depth-1; ++j){
+	for(DWORD i = 0; i < gridWidth-1; ++i){
+		for(DWORD j = 0; j < gridDepth-1; ++j){
 			// Upper left.
-			//tv = vertices[index3].texC.y;
 
-			indices[k] = i*depth+j;
-			indices[k+1] = i*depth+j+1;
-			indices[k+2] = (i+1)*depth+j;
+			indices[k] = i*gridDepth+j;
+			indices[k+1] = i*gridDepth+j+1;
+			indices[k+2] = (i+1)*gridDepth+j;
 
-			indices[k+3] = (i+1)*depth+j;
-			indices[k+4] = i*depth+j+1;
-			indices[k+5] = (i+1)*depth+j+1;
+			indices[k+3] = (i+1)*gridDepth+j;
+			indices[k+4] = i*gridDepth+j+1;
+			indices[k+5] = (i+1)*gridDepth+j+1;
 			k += 6; // next quad
 		}
 	}
@@ -71,12 +76,13 @@ bool Grid::GenerateGridFromTGA(char* filename){
 		return false;
 
 	delete terrainLoader;
-	terrainLoader = 0;
+	terrainLoader = nullptr;
+
 	return true;
 }
 
 ///Generate a grid by an arbitrary function GetHeight
-bool Grid::GenerateGrid(int width, int depth){
+bool Grid::GenerateGrid(int width, int depth)const{
 /*
 	mVertexCount = (width*depth);
 	vertices = new VertexC[mVertexCount];
@@ -133,7 +139,7 @@ bool Grid::GenerateGrid(int width, int depth){
 }
 
 //compute the vertex normals
-void Grid::ComputeNormals(){
+void Grid::ComputeNormals()const{
 
 	for (int i = 0; i < gridWidth; i++){
 		for (int j = 0; j < gridDepth; j++){
@@ -185,57 +191,20 @@ void Grid::ComputeNormals(){
 	}
 }
 
-void Grid::ComputeTextureCoords(){
+void Grid::ComputeTextureCoords()const{
 
-	int incrementCount, i, j, tuCount, tvCount;
-	float incrementValue, tuCoordinate, tvCoordinate;
+	float incrementValue;
 
 	// Calculate how much to increment the texture coordinates by.
 	incrementValue = (float)TEXTURE_REPEAT / (float)gridDepth;
 
-	// Calculate how many times to repeat the texture.
-	incrementCount = gridDepth / TEXTURE_REPEAT;
-
-	// Initialize the tu and tv coordinate values.
-	tuCoordinate = 0.0f;
-	tvCoordinate = 1.0f;
-
-	// Initialize the tu and tv coordinate indexes.
-	tuCount = 0;
-	tvCount = 0;
+	float widthRepeat = (float)(gridWidth/TEXTURE_REPEAT);
+	float depthRepeat = (float)(gridDepth/TEXTURE_REPEAT);
 
 	// Loop through the entire height map and calculate the tu and tv texture coordinates for each vertex.
-	for(i=0; i<gridWidth; i++)
-	{
-		for(j=0; j<gridDepth; j++)
-		{
-			// Store the texture coordinate in the height map.
-			//m_heightMap[(gridWidth * i) + j].tu = tuCoordinate;
-			//m_heightMap[(gridWidth * i) + j].tv = tvCoordinate;
-
-			vertices[i*gridDepth+j].texC = Vector2f(tuCoordinate,tvCoordinate);
-
-			// Increment the tu texture coordinate by the increment value and increment the index by one.
-			tuCoordinate += incrementValue;
-			tuCount++;
-
-			// Check if at the far right end of the texture and if so then start at the beginning again.
-			if(tuCount == incrementCount)
-			{
-				tuCoordinate = 0.0f;
-				tuCount = 0;
-			}
-		}
-
-		// Increment the tv texture coordinate by the increment value and increment the index by one.
-		tvCoordinate -= incrementValue;
-		tvCount++;
-
-		// Check if at the top of the texture and if so then start at the bottom again.
-		if(tvCount == incrementCount)
-		{
-			tvCoordinate = 1.0f;
-			tvCount = 0;
+	for(int i=0; i<gridWidth; i++){
+		for(int j=0; j<gridDepth; j++){
+			vertices[i*gridDepth+j].texC = Vector2f(i / widthRepeat, j / depthRepeat);
 		}
 	}
 }
@@ -280,11 +249,8 @@ bool Grid::InitializeBuffers(DWORD* indices,  VertexNT* vertices){
 	if(FAILED(result)){
 		return false;
 	}
-
 	stride = sizeof(VertexNT);
-
-	return true;
-	
+	return true;	
 }
 
 

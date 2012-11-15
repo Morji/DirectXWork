@@ -40,7 +40,6 @@ public:
 private:
 	ID3D10EffectVariable* mEyePosVar;
 	ID3D10EffectVariable* mLightVar;
-	ID3D10EffectScalarVariable* mTexType;
 
 	ID3D10EffectShaderResourceVariable* mDiffuseMap;			//for regular texturing
 	ID3D10EffectShaderResourceVariable* mSpecularMap;			//for regular and mutli texturing

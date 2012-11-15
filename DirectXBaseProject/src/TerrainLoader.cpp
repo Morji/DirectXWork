@@ -6,6 +6,8 @@ TerrainLoader::TerrainLoader(){
 }
 
 TerrainLoader::~TerrainLoader(){
+	delete [] height;
+	height = nullptr;
 	
 }
 
@@ -43,6 +45,7 @@ FILE * TerrainLoader::LoadTGA(char* filename){
 	}
 
 	if(memcmp(UTGAcompare, &Tgaheader, sizeof(Tgaheader)) == 0){			// See if header matches the predefined header
+		
 		return fTGA;														// If so - return the file
 	}
 	else{																	// If header matches neither type	
@@ -81,15 +84,10 @@ bool TerrainLoader::ComputeHeights(FILE * fTGA){
 		}
 		return false;														// Return failed
 	}
-	/*unsigned int terrainTexture_type;
-	if(terrainTexture_bpp == 24)											// If the BPP of the image is 24...
-		terrainTexture_type	= GL_RGB;										// Set Image type to GL_RGB
-	else																	// Else if its 32 BPP
-		terrainTexture_type	= GL_RGBA;										// Set image type to GL_RGBA*/
 
 	tga.bytesPerPixel	= (tga.bpp / 8);												// Compute the number of BYTES per pixel
 	tga.imageSize		= (tga.bytesPerPixel * tga.width * tga.height);					// Compute the total amout of memory needed to store data
-	unsigned char *terrainTexture_imageData	= (unsigned char *)malloc(tga.imageSize);	// Allocate that much memory
+	unsigned char *terrainTexture_imageData	= new unsigned char[tga.imageSize];			// Allocate that much memory
 
 	if(terrainTexture_imageData == NULL){											// If no space was allocated	
 		MessageBox(NULL, L"Could not allocate memory for image", L"ERROR", MB_OK);	// Display Error
@@ -106,7 +104,7 @@ bool TerrainLoader::ComputeHeights(FILE * fTGA){
 		return false;														// Return failed
 	}
 
-	height = (float *)malloc(tga.width*tga.height*sizeof(float));
+	height = new float[tga.width*tga.height];
 
 	// Byte Swapping Optimized By Steve Thomas
 	for(int cswap = 0; cswap < (int)tga.imageSize; cswap += tga.bytesPerPixel){
@@ -115,7 +113,6 @@ bool TerrainLoader::ComputeHeights(FILE * fTGA){
 	}
 
 	fclose(fTGA); // Close file*/
-
 
 	terrainWidth = tga.width;
 	terrainDepth = tga.height;
@@ -127,6 +124,11 @@ bool TerrainLoader::ComputeHeights(FILE * fTGA){
 			height[j*terrainWidth + i] = pointHeight;
 		}
 	}
+
+	delete [] terrainTexture_imageData;
+	terrainTexture_imageData = nullptr;
+	
+	
 
 	//smooth out the terrain
 	for (int i = 0; i < 4; i++)

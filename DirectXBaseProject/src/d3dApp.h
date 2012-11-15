@@ -37,8 +37,11 @@ public:
 	virtual void mouseScroll(int amount);
 	virtual LRESULT msgProc(UINT msg, WPARAM wParam, LPARAM lParam);
 
+	void swapRasterizers();
+
 protected:
 	void initMainWindow();
+	void buildRasterizers();
 	void initDirect3D();
 	
 protected:
@@ -59,6 +62,9 @@ protected:
 	ID3D10Texture2D* mDepthStencilBuffer;
 	ID3D10RenderTargetView* mRenderTargetView;
 	ID3D10DepthStencilView* mDepthStencilView;
+	ID3D10RasterizerState* mCurrentRasterizer;
+	ID3D10RasterizerState* mRasterizerSolid;
+	ID3D10RasterizerState* mRasterizerWireframe;
 	ID3DX10Font* mFont;
 
 	// Derived class should set these in derived constructor to customize starting values.

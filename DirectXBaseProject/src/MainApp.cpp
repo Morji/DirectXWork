@@ -38,7 +38,7 @@ public:
 private:
 	void buildFX();
 	void buildVertexLayouts();
-	void buildRasterizer();
+	
  
 private:
 
@@ -51,12 +51,11 @@ private:
 	GameCamera		*camera;
 
 	TexShader		*texShader;
+	TexShader		*multiTexShader;
 	LightShader		*lightShader;
 	Shader			*colorShader;
 
 	float			aspectRatio;
-
-	ID3D10RasterizerState* pRasterizer;
 
 	D3DXMATRIX mView;
 	D3DXMATRIX mProj;
@@ -163,52 +162,40 @@ void MainApp::initApp(){
 	grid = new Grid();
 
 	// Initialize the model object.
-	//result = cube->InitializeWithTexture(md3dDevice,L"assets/cobbles.jpg", L"assets/cobbles_SPEC.jpg");
-	result = cube->InitializeWithMultiTexture(md3dDevice,L"assets/defaultspec.dds", L"assets/blendmap.jpg",L"assets/ground0.dds",
-																									   L"assets/grass0.dds",
-																									   L"assets/stone2.dds");
+	result = cube->InitializeWithMultiTexture(md3dDevice,L"assets/defaultspec.dds", L"assets/blendmap.jpg",L"assets/grass0.dds",
+																										   L"assets/stone2.dds",
+																										   L"assets/ground0.dds");
 	if(!result){
 		MessageBox(getMainWnd(), L"Could not initialize the cube object.", L"Error", MB_OK);
 	}
 	cube->pos = D3DXVECTOR3(0,0,0);
 
-	// Initialize the model object.
-	//result = cube->InitializeWithTexture(md3dDevice,L"assets/cobbles.jpg", L"assets/cobbles_SPEC.jpg");
-	result = grid->InitializeWithTexture(md3dDevice,L"assets/tiling_texture.png",L"assets/cobbles_SPEC.jpg");
+	//result = grid->InitializeWithTexture(md3dDevice,L"assets/cobbles.jpg",L"assets/cobbles_SPEC.jpg");
+
+	result = grid->InitializeWithMultiTexture(md3dDevice,L"assets/defaultspec.dds", L"assets/blendmap.jpg",L"assets/grass0.dds",
+																										   L"assets/stone2.dds",
+																										   L"assets/ground0.dds");
 
 	if(!result){
 		MessageBox(getMainWnd(), L"Could not initialize the grid object.", L"Error", MB_OK);
 	}
-	//grid->GenerateGrid(130,130);
+
 	grid->GenerateGridFromTGA("assets/heightmap.tga");
-	// Create the light shader object.
-	lightShader = new LightShader();
-
-	// Initialize the light shader object.
-	result = lightShader->Initialize(md3dDevice, getMainWnd());
-	if(!result){
-		MessageBox(getMainWnd(), L"Could not initialize the light shader object.", L"Error", MB_OK);
-	}
-
-	// Create the color shader object.
-	colorShader = new Shader();
-
-	// Initialize the light shader object.
-	result = colorShader->Initialize(md3dDevice, getMainWnd());
-	if(!result){
-		MessageBox(getMainWnd(), L"Could not initialize the color shader object.", L"Error", MB_OK);
-	}
 
 	// Create the text shader object.
 	texShader = new TexShader();
-
-	// Initialize the text shader object.
+	// Initialize the tex shader object.
 	result = texShader->Initialize(md3dDevice, getMainWnd(),REGULAR);
 	if(!result){
 		MessageBox(getMainWnd(), L"Could not initialize the tex shader object.", L"Error", MB_OK);
 	}
 
-	buildRasterizer();
+	multiTexShader = new TexShader();
+	// Initialize the multi-tex shader object.
+	result = multiTexShader->Initialize(md3dDevice, getMainWnd(),MULTI);
+	if(!result){
+		MessageBox(getMainWnd(), L"Could not initialize the multi tex shader object.", L"Error", MB_OK);
+	}
 }
 
 ///Any input key processing - to it here
@@ -237,7 +224,10 @@ void MainApp::processInput(){
 		cube->theta += D3DXVECTOR3(0,1.5f,0)*mTimer.getDeltaTime();
 	}
 
-	
+	if (GetAsyncKeyState('B')){
+		swapRasterizers();
+		Sleep(100);
+	}
 }
 
 void MainApp::mouseScroll(int amount){
@@ -267,7 +257,7 @@ void MainApp::drawScene(){
 	// restore the default states by passing null.
 	md3dDevice->OMSetDepthStencilState(0, 0);
 	float blendFactors[] = {0.0f, 0.0f, 0.0f, 0.0f};
-	md3dDevice->RSSetState(pRasterizer);
+	md3dDevice->RSSetState(mCurrentRasterizer);
 	md3dDevice->OMSetBlendState(0, blendFactors, 0xffffffff);
 
 	// Generate the view matrix based on the camera's position.
@@ -275,37 +265,22 @@ void MainApp::drawScene(){
 
 	// Get the world, view, and projection matrices from the camera and d3d objects.
 	camera->GetViewMatrix(mView);
-	//Render the cube
-	//cube->Render(mWVP);
-	//texShader->RenderMultiTexturing(md3dDevice, cube->GetIndexCount(), cube->objMatrix, mView, mProj, camera->GetPosition(), light, cube->GetSpecularTexture(), cube->GetBlendTexture(),
-		//cube->GetDiffuseMap(0),cube->GetDiffuseMap(1),cube->GetDiffuseMap(2));
 
-	//Render the grid
+	//cube->Render(mWVP);
 	grid->Render(mWVP);
+	multiTexShader->RenderMultiTexturing(md3dDevice,grid->GetIndexCount(),grid->objMatrix,mView,mProj,camera->GetPosition(),light,grid->GetSpecularTexture(),
+																															 grid->GetBlendTexture(),
+																															 grid->GetDiffuseMap(0),
+																															 grid->GetDiffuseMap(1),
+																															 grid->GetDiffuseMap(2));
+	//Render the grid
+	/*grid->Render(mWVP);
 	texShader->RenderTexturing(md3dDevice,grid->GetIndexCount(),grid->objMatrix,mView,mProj,camera->GetPosition(),light,grid->GetDiffuseTexture(),grid->GetSpecularTexture());
-	//colorShader->Render(md3dDevice,grid->GetIndexCount(),grid->objMatrix,mView,mProj);
 	
+	*/
 	// We specify DT_NOCLIP, so we do not care about width/height of the rect.
 	RECT R = {5, 5, 0, 0};
 	md3dDevice->RSSetState(0);
 	mFont->DrawText(0, mFrameStats.c_str(), -1, &R, DT_NOCLIP, BLACK);
 	mSwapChain->Present(0, 0);
-}
-
-void MainApp::buildRasterizer(){
-
-	D3D10_RASTERIZER_DESC rasterizerState;
-	rasterizerState.CullMode = D3D10_CULL_BACK;
-	rasterizerState.FillMode = D3D10_FILL_SOLID;
-	rasterizerState.FrontCounterClockwise = false;
-	rasterizerState.DepthBias = false;
-	rasterizerState.DepthBiasClamp = 0;
-	rasterizerState.SlopeScaledDepthBias = 0;
-	rasterizerState.DepthClipEnable = true;
-	rasterizerState.ScissorEnable = false;
-	rasterizerState.MultisampleEnable = false;
-	rasterizerState.AntialiasedLineEnable = true;
-
-	HRESULT result = md3dDevice->CreateRasterizerState( &rasterizerState, &pRasterizer);
-	md3dDevice->RSSetState(pRasterizer);
 }

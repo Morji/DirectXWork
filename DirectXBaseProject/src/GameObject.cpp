@@ -122,7 +122,7 @@ bool GameObject::InitializeBuffers(DWORD* indices, VertexNT* vertices){
 
 	// Set up the description of the vertex buffer.
 	vertexBufferDesc.Usage = D3D10_USAGE_DEFAULT;
-	vertexBufferDesc.ByteWidth = sizeof(&vertices) * mVertexCount;
+	vertexBufferDesc.ByteWidth = sizeof(VertexNT) * mVertexCount;
 	vertexBufferDesc.BindFlags = D3D10_BIND_VERTEX_BUFFER;
 	vertexBufferDesc.CPUAccessFlags = 0;
 	vertexBufferDesc.MiscFlags = 0;
@@ -139,7 +139,7 @@ bool GameObject::InitializeBuffers(DWORD* indices, VertexNT* vertices){
 
 	// Set up the description of the index buffer.
 	indexBufferDesc.Usage = D3D10_USAGE_DEFAULT;
-	indexBufferDesc.ByteWidth = sizeof(unsigned long) * mIndexCount;
+	indexBufferDesc.ByteWidth = sizeof(DWORD) * mIndexCount;
 	indexBufferDesc.BindFlags = D3D10_BIND_INDEX_BUFFER;
 	indexBufferDesc.CPUAccessFlags = 0;
 	indexBufferDesc.MiscFlags = 0;
@@ -209,9 +209,9 @@ bool GameObject::LoadMultiTexture(WCHAR* specularMapTex, WCHAR* blendMapTex,	WCH
 
 	if (!diffuseMapRV[0]->Initialize(md3dDevice,diffuseMapRV1Tex))
 		return false;
-	if (!diffuseMapRV[1]->Initialize(md3dDevice,diffuseMapRV1Tex))
+	if (!diffuseMapRV[1]->Initialize(md3dDevice,diffuseMapRV2Tex))
 		return false;
-	if (!diffuseMapRV[2]->Initialize(md3dDevice,diffuseMapRV1Tex))
+	if (!diffuseMapRV[2]->Initialize(md3dDevice,diffuseMapRV3Tex))
 		return false;
 
 	// Initialize the texture object.

@@ -61,6 +61,8 @@ D3DApp::~D3DApp()
 	ReleaseCOM(mDepthStencilView);
 	ReleaseCOM(mSwapChain);
 	ReleaseCOM(mDepthStencilBuffer);
+	ReleaseCOM(mRasterizerSolid);
+	ReleaseCOM(mRasterizerWireframe);
 	ReleaseCOM(md3dDevice);
 	ReleaseCOM(mFont);
 }
@@ -110,6 +112,7 @@ void D3DApp::initApp()
 {
 	initMainWindow();
 	initDirect3D();
+	buildRasterizers();
 
 	D3DX10_FONT_DESC fontDesc;
 	fontDesc.Height          = 24;
@@ -214,6 +217,40 @@ void D3DApp::drawScene()
 {
 	md3dDevice->ClearRenderTargetView(mRenderTargetView, mClearColor);
 	md3dDevice->ClearDepthStencilView(mDepthStencilView, D3D10_CLEAR_DEPTH|D3D10_CLEAR_STENCIL, 1.0f, 0);
+}
+
+void D3DApp::buildRasterizers(){
+
+	//build solid rasterizer
+	D3D10_RASTERIZER_DESC rasterizerState;
+	rasterizerState.CullMode = D3D10_CULL_BACK;
+	rasterizerState.FillMode = D3D10_FILL_SOLID;
+	rasterizerState.FrontCounterClockwise = false;
+	rasterizerState.DepthBias = false;
+	rasterizerState.DepthBiasClamp = 0;
+	rasterizerState.SlopeScaledDepthBias = 0;
+	rasterizerState.DepthClipEnable = true;
+	rasterizerState.ScissorEnable = false;
+	rasterizerState.MultisampleEnable = false;
+	rasterizerState.AntialiasedLineEnable = true;
+
+	HRESULT result = md3dDevice->CreateRasterizerState( &rasterizerState, &mRasterizerSolid);
+
+	//build wireframe rasterizer
+	rasterizerState.FillMode = D3D10_FILL_WIREFRAME;
+
+	result = md3dDevice->CreateRasterizerState( &rasterizerState, &mRasterizerWireframe);
+
+	mCurrentRasterizer = mRasterizerSolid;
+}
+
+void D3DApp::swapRasterizers(){
+	if (mCurrentRasterizer == mRasterizerSolid){
+		mCurrentRasterizer = mRasterizerWireframe;
+	}
+	else{
+		mCurrentRasterizer = mRasterizerSolid;
+	}
 }
 
 LRESULT D3DApp::msgProc(UINT msg, WPARAM wParam, LPARAM lParam)

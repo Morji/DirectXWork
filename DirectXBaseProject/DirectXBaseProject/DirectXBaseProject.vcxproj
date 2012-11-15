@@ -46,6 +46,7 @@
     <None Include="assets\color2.fx" />
     <None Include="assets\lighthelper.fx" />
     <None Include="assets\lighting.fx" />
+    <None Include="assets\multitexture.fx" />
     <None Include="assets\texture.fx" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
