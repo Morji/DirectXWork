@@ -12,41 +12,14 @@ GameCamera::GameCamera(void)
 
 	moveLeftRight = moveBackForward = yaw = pitch = yaw = 0.0f;
 	mouseLastPos.x = mouseLastPos.y = 0;
+	camMoveFactor = 15.0f;
 }
 
 GameCamera::~GameCamera(void)
 {
 }
 
-///SETTERS
-void GameCamera::SetPosition(float x, float y, float z){
-	position = D3DXVECTOR3(x,y,z);
-}
 
-void GameCamera::SetRotation(float x, float y, float z){
-	rotation = D3DXVECTOR3(x,y,z);
-}
-
-void GameCamera::SetPosition(D3DXVECTOR3 position){
-	this->position = position;
-}
-
-void GameCamera::SetRotation(D3DXVECTOR3 rotation){
-	this->rotation = rotation;
-}
-
-void GameCamera::SetUp(D3DXVECTOR3 up){
-	this->up = up;
-}
-
-///GETTERS
-D3DXVECTOR3 GameCamera::GetPosition(){
-	return position;
-}
-
-D3DXVECTOR3 GameCamera::GetRotation(){
-	return rotation;
-}
 
 void GameCamera::MouseMove(int wndWidth, int wndHeight){	
 	POINT mousePos; 
@@ -98,6 +71,43 @@ void GameCamera::Render()
 
 	// Finally create the view matrix from the three updated vectors.
 	D3DXMatrixLookAtLH(&mViewMatrix, &position, &lookAt, &up);
+}
+
+void GameCamera::ModifyCamMovement(float amount){
+	camMoveFactor += amount;
+	if (camMoveFactor < 0.0f){
+		camMoveFactor = 0.0f;
+	}
+}
+
+///SETTERS
+void GameCamera::SetPosition(float x, float y, float z){
+	position = D3DXVECTOR3(x,y,z);
+}
+
+void GameCamera::SetRotation(float x, float y, float z){
+	rotation = D3DXVECTOR3(x,y,z);
+}
+
+void GameCamera::SetPosition(D3DXVECTOR3 position){
+	this->position = position;
+}
+
+void GameCamera::SetRotation(D3DXVECTOR3 rotation){
+	this->rotation = rotation;
+}
+
+void GameCamera::SetUp(D3DXVECTOR3 up){
+	this->up = up;
+}
+
+///GETTERS
+D3DXVECTOR3 GameCamera::GetPosition(){
+	return position;
+}
+
+D3DXVECTOR3 GameCamera::GetRotation(){
+	return rotation;
 }
 
 void GameCamera::GetViewMatrix(D3DXMATRIX& viewMatrix)

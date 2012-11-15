@@ -33,6 +33,7 @@ public:
 	void onResize();
 	void updateScene(float dt);
 	void drawScene(); 
+	void mouseScroll(int amount);
 
 private:
 	void buildFX();
@@ -173,7 +174,7 @@ void MainApp::initApp(){
 
 	// Initialize the model object.
 	//result = cube->InitializeWithTexture(md3dDevice,L"assets/cobbles.jpg", L"assets/cobbles_SPEC.jpg");
-	result = grid->InitializeWithTexture(md3dDevice,L"assets/cobbles.jpg",L"assets/cobbles_SPEC.jpg");
+	result = grid->InitializeWithTexture(md3dDevice,L"assets/tiling_texture.png",L"assets/cobbles_SPEC.jpg");
 
 	if(!result){
 		MessageBox(getMainWnd(), L"Could not initialize the grid object.", L"Error", MB_OK);
@@ -220,21 +221,31 @@ void MainApp::processInput(){
 	}
 
 	if (GetAsyncKeyState('W')){
-		camera->moveBackForward += camMoveFactor*mTimer.getDeltaTime();;
+		camera->moveBackForward += camera->camMoveFactor*mTimer.getDeltaTime();
 	}
 	if (GetAsyncKeyState('S')){
-		camera->moveBackForward -= camMoveFactor*mTimer.getDeltaTime();;
+		camera->moveBackForward -= camera->camMoveFactor*mTimer.getDeltaTime();
 	}
 	if (GetAsyncKeyState('A')){
-		camera->moveLeftRight -= camMoveFactor*mTimer.getDeltaTime();;
+		camera->moveLeftRight -= camera->camMoveFactor*mTimer.getDeltaTime();
 	}
 	if (GetAsyncKeyState('D')){
-		camera->moveLeftRight += camMoveFactor*mTimer.getDeltaTime();;
+		camera->moveLeftRight += camera->camMoveFactor*mTimer.getDeltaTime();
 	}
 
 	if (GetAsyncKeyState('F')){
 		cube->theta += D3DXVECTOR3(0,1.5f,0)*mTimer.getDeltaTime();
 	}
+
+	
+}
+
+void MainApp::mouseScroll(int amount){
+	if (amount > 0)
+		camera->ModifyCamMovement(0.5f);
+	else{
+		camera->ModifyCamMovement(-0.5f);
+	}	
 }
 
 void MainApp::onResize(){

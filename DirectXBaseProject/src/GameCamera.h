@@ -3,7 +3,7 @@
 
 #include "d3dUtil.h"
 
-#define camMoveFactor 10.0f
+
 
 class GameCamera
 {
@@ -24,9 +24,11 @@ public:
 	void Render();
 	void MouseMove(int wndWidth, int wndHeight);
 	void GetViewMatrix(D3DXMATRIX& viewMatrix);
+	void ModifyCamMovement(float amount);
 
 	float moveLeftRight,moveBackForward;
 	float yaw, pitch, roll;
+	float camMoveFactor;
 private:
 	D3DXVECTOR3 position;
 	D3DXVECTOR3 rotation;

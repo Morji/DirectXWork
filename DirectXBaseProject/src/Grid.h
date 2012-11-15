@@ -6,9 +6,9 @@
 #include "TerrainLoader.h"
 
 #define CELLSPACING		1.0f
-#define	HEIGHT_FACTOR	0.2f;
+#define	HEIGHT_FACTOR	0.1f;
 
-const int TEXTURE_REPEAT = 1;	//how often the texture will repeat over the terrain grid
+const int TEXTURE_REPEAT = 2;	//how often the texture will repeat over the terrain grid
 
 class Grid : public GameObject
 {

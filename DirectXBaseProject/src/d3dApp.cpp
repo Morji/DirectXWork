@@ -314,6 +314,10 @@ LRESULT D3DApp::msgProc(UINT msg, WPARAM wParam, LPARAM lParam)
 		PostQuitMessage(0);
 		return 0;
 
+	case WM_MOUSEWHEEL:
+			mouseScroll(GET_WHEEL_DELTA_WPARAM(wParam));
+			break;
+
 	// The WM_MENUCHAR message is sent when a menu is active and the user presses 
 	// a key that does not correspond to any mnemonic or accelerator key. 
 	case WM_MENUCHAR:
@@ -427,4 +431,8 @@ void D3DApp::initDirect3D()
 	// just call the onResize method here to avoid code duplication.
 	
 	onResize();
+}
+
+void D3DApp::mouseScroll(int amount){
+	
 }

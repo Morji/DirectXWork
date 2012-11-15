@@ -128,12 +128,12 @@ float4 TexturePixelShader(PixelInputType input) : SV_Target
 		return (input.shade*(c1+c2+c3));
 	}*/
 	//else{
-		spec = gSpecMap.Sample( SampleTypeMirror, input.tex );
+		spec = gSpecMap.Sample( SampleTypeWrap, input.tex );
 		// Map [0,1] --> [0,256]
 		spec.a *= 256.0f;
 
 		// Get materials from texture maps.
-		float4 diffuse = gDiffuseMap.Sample( SampleTypeMirror, input.tex );	
+		float4 diffuse = gDiffuseMap.Sample( SampleTypeWrap, input.tex );	
     
 		// Compute the lit color for this pixel.
 		SurfaceInfo v = {input.positionW, normalW, diffuse, spec};

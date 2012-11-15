@@ -34,6 +34,7 @@ public:
 	virtual void updateScene(float dt);
 	virtual void drawScene(); 
 	virtual void processInput(void){};
+	virtual void mouseScroll(int amount);
 	virtual LRESULT msgProc(UINT msg, WPARAM wParam, LPARAM lParam);
 
 protected:

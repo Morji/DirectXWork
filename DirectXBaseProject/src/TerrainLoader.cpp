@@ -140,7 +140,7 @@ void TerrainLoader::SmoothHeights(float factor){
 	
 	float k = factor;
 	for (int i = 1; i < terrainWidth; i++)
-		for (int j = 0; j < terrainWidth; j++)
+		for (int j = 0; j < terrainDepth; j++)
 			height[j*terrainWidth + i] = height[j*terrainWidth + i - 1]*(1-k) + height[j*terrainWidth + i] * k;
 
 	for (int i = terrainWidth-2; i < -1; i--)
