@@ -56,12 +56,14 @@ void TexShader::RenderMultiTexturing(ID3D10Device* device, int indexCount,
 													  Light lightVar,
 													  ID3D10ShaderResourceView *specularMap,
 													  ID3D10ShaderResourceView *blendMap,
-													  ID3D10ShaderResourceView* diffuseMapRV,
+													  ID3D10ShaderResourceView* diffuseMapRV1,
 													  ID3D10ShaderResourceView* diffuseMapRV2,
-													  ID3D10ShaderResourceView* diffuseMapRV3){
+													  ID3D10ShaderResourceView* diffuseMapRV3,
+													  float maxHeight,
+													  int lightType){
 
 	// Set the shader parameters that it will use for rendering.
-	SetShaderParametersMultiTexturing(indexCount, worldMatrix, viewMatrix, projectionMatrix, mEyePos, lightVar, specularMap, blendMap,diffuseMapRV,diffuseMapRV2,diffuseMapRV3);
+	SetShaderParametersMultiTexturing(indexCount, worldMatrix, viewMatrix, projectionMatrix, mEyePos, lightVar, specularMap, blendMap,diffuseMapRV1,diffuseMapRV2,diffuseMapRV3,maxHeight,lightType);
 
 	// Now render the prepared buffers with the shader.
 	RenderShader(device, indexCount);
@@ -77,18 +79,7 @@ void TexShader::SetShaderParametersTexturing(int indexCount,
 									ID3D10ShaderResourceView *specularMap)
 {
 
-	// Set the wvp matrix inside the shader
-	D3DXMATRIX mWVP = worldMatrix*viewMatrix*projectionMatrix;
-	mWVPMatrix->SetMatrix((float*)&mWVP);
-
-	// Set the world matrix variable inside the shader.
-	mWorldMatrix->SetMatrix((float*)&worldMatrix);
-
-	// Set the view matrix variable inside the shader.
-	mViewMatrix->SetMatrix((float*)&viewMatrix);
-
-	// Set the projection matrix variable inside the shader.
-	mProjectionMatrix->SetMatrix((float*)&projectionMatrix);
+	Shader::SetShaderParameters(worldMatrix,viewMatrix,projectionMatrix);
 
 	// Set the eye position variable inside the shader
 	mEyePosVar->SetRawValue(&mEyePos, 0, sizeof(D3DXVECTOR3));
@@ -108,32 +99,25 @@ void TexShader::SetShaderParametersMultiTexturing(int indexCount,
 											D3DXMATRIX viewMatrix, 
 											D3DXMATRIX projectionMatrix,
 											D3DXVECTOR3 mEyePos, 
-											Light lightVar,
+											Light lightVar,											
 											ID3D10ShaderResourceView *specularMap,
 											ID3D10ShaderResourceView *blendMap,
-											ID3D10ShaderResourceView* diffuseMapRV,
+											ID3D10ShaderResourceView* diffuseMapRV1,
 											ID3D10ShaderResourceView* diffuseMapRV2,
-											ID3D10ShaderResourceView* diffuseMapRV3)
+											ID3D10ShaderResourceView* diffuseMapRV3,
+											float maxHeight,
+											int lightType)
 {
 
-	D3DXMATRIX mWVP = worldMatrix*viewMatrix;
-	mWVP *= projectionMatrix;
-	mWVPMatrix->SetMatrix((float*)&mWVP);
-
-	// Set the world matrix variable inside the shader.
-	mWorldMatrix->SetMatrix((float*)&worldMatrix);
-
-	// Set the view matrix variable inside the shader.
-	mViewMatrix->SetMatrix((float*)&viewMatrix);
-
-	// Set the projection matrix variable inside the shader.
-	mProjectionMatrix->SetMatrix((float*)&projectionMatrix);
+	Shader::SetShaderParameters(worldMatrix,viewMatrix,projectionMatrix);
 
 	// Set the eye position variable inside the shader
 	mEyePosVar->SetRawValue(&mEyePos, 0, sizeof(D3DXVECTOR3));
 
 	// Set the light variable inside the shader
 	mLightVar->SetRawValue(&lightVar, 0, sizeof(Light));
+
+	mLightType->SetInt(lightType);
 
 	// Set the diffuse map shader var
 	mSpecularMap->SetResource(specularMap);
@@ -142,9 +126,14 @@ void TexShader::SetShaderParametersMultiTexturing(int indexCount,
 	mBlendMap->SetResource(blendMap);
 
 	//Set the diffuse map RV shader vars
-	mDiffuseMapRV->SetResource(diffuseMapRV);
-	mDiffuseMapRV2->SetResource(diffuseMapRV2);
-	mDiffuseMapRV3->SetResource(diffuseMapRV3);
+	mDiffuseMapRV[0]->SetResource(diffuseMapRV1);
+	mDiffuseMapRV[1]->SetResource(diffuseMapRV2);
+	mDiffuseMapRV[2]->SetResource(diffuseMapRV3);
+
+	//Set the height variables - the first one is 0, the second one is in the middle between them and the third is the max
+	mHeights[0]->SetFloat(0.0f);
+	mHeights[1]->SetFloat(maxHeight/3.0f);
+	mHeights[2]->SetFloat(maxHeight);
 }
 
 bool TexShader::InitializeShader(ID3D10Device* device, HWND hwnd, WCHAR* filename){
@@ -231,13 +220,20 @@ bool TexShader::InitializeShader(ID3D10Device* device, HWND hwnd, WCHAR* filenam
 	mProjectionMatrix = mEffect->GetVariableByName("projectionMatrix")->AsMatrix();
 
 	mEyePosVar		= mEffect->GetVariableByName("gEyePosW");
+
 	mLightVar		= mEffect->GetVariableByName("gLight");
+	mLightType		= mEffect->GetVariableByName("gLightType")->AsScalar();
+
 	mDiffuseMap		= mEffect->GetVariableByName("gDiffuseMap")->AsShaderResource();
 	mSpecularMap	= mEffect->GetVariableByName("gSpecMap")->AsShaderResource();
 	mBlendMap		= mEffect->GetVariableByName("gBlendMap")->AsShaderResource();
 
-	mDiffuseMapRV	= mEffect->GetVariableByName("gLayer1")->AsShaderResource();
-	mDiffuseMapRV2	= mEffect->GetVariableByName("gLayer2")->AsShaderResource();
-	mDiffuseMapRV3	= mEffect->GetVariableByName("gLayer3")->AsShaderResource();
+	mDiffuseMapRV[0]	= mEffect->GetVariableByName("gLayer1")->AsShaderResource();
+	mDiffuseMapRV[1]	= mEffect->GetVariableByName("gLayer2")->AsShaderResource();
+	mDiffuseMapRV[2]	= mEffect->GetVariableByName("gLayer3")->AsShaderResource();
+
+	mHeights[0]			= mEffect->GetVariableByName("height1")->AsScalar();
+	mHeights[1]			= mEffect->GetVariableByName("height2")->AsScalar();
+	mHeights[2]			= mEffect->GetVariableByName("height3")->AsScalar();
 	return true;
 }

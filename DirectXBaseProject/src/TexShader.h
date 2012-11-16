@@ -32,22 +32,24 @@ public:
 													  Light lightVar,
 													  ID3D10ShaderResourceView *specularMap,
 													  ID3D10ShaderResourceView *blendMap,
-													  ID3D10ShaderResourceView* diffuseMapRV,
+													  ID3D10ShaderResourceView* diffuseMapRV1,
 													  ID3D10ShaderResourceView* diffuseMapRV2,
-													  ID3D10ShaderResourceView* diffuseMapRV3);
+													  ID3D10ShaderResourceView* diffuseMapRV3,
+													  float maxHeight,
+													  int lightType = 0);
 	~TexShader(void);
 
 private:
-	ID3D10EffectVariable* mEyePosVar;
-	ID3D10EffectVariable* mLightVar;
+	ID3D10EffectVariable*		mEyePosVar;
+	ID3D10EffectVariable*		mLightVar;
+	ID3D10EffectScalarVariable*	mLightType;
 
+	ID3D10EffectScalarVariable*			mHeights[3];				//for height-mapped multi texturing
 	ID3D10EffectShaderResourceVariable* mDiffuseMap;			//for regular texturing
 	ID3D10EffectShaderResourceVariable* mSpecularMap;			//for regular and mutli texturing
 
 	ID3D10EffectShaderResourceVariable* mBlendMap;				//for multi texturing
-	ID3D10EffectShaderResourceVariable* mDiffuseMapRV;			//for multi texturing
-	ID3D10EffectShaderResourceVariable* mDiffuseMapRV2;			//for multi texturing
-	ID3D10EffectShaderResourceVariable* mDiffuseMapRV3;			//for multi texturing
+	ID3D10EffectShaderResourceVariable* mDiffuseMapRV[3];		//for multi texturing
 
 	void SetShaderParametersTexturing(int indexCount, 
 							D3DXMATRIX worldMatrix, 
@@ -66,9 +68,11 @@ private:
 											Light lightVar,
 											ID3D10ShaderResourceView *specularMap,
 											ID3D10ShaderResourceView *blendMap,
-											ID3D10ShaderResourceView* diffuseMapRV,
+											ID3D10ShaderResourceView* diffuseMapRV1,
 											ID3D10ShaderResourceView* diffuseMapRV2,
-											ID3D10ShaderResourceView* diffuseMapRV3);
+											ID3D10ShaderResourceView* diffuseMapRV3,
+											float maxHeight,
+											int lightType);
 
 	bool InitializeShader(ID3D10Device* device, HWND hwnd, WCHAR* filename);
 };

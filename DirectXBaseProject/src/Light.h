@@ -9,6 +9,8 @@
 
 #include "d3dUtil.h"
 
+enum LIGHT_TYPE{L_PARALLEL = 0,L_POINT = 1,L_SPOT = 2};
+
 struct Light{
 
 	Light(){
@@ -16,9 +18,9 @@ struct Light{
 	}
 
 	D3DXVECTOR3 pos;
-	float pad1;      // not used
+	float pad4;      // not used
 	D3DXVECTOR3 dir;
-	float pad2;      // not used
+	float pad5;      // not used
 	D3DXCOLOR ambient;
 	D3DXCOLOR diffuse;
 	D3DXCOLOR specular;

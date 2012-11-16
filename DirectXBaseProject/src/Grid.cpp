@@ -3,6 +3,7 @@
 
 Grid::Grid(void)
 {
+	maxHeight = 0.0f;
 	vertices = nullptr;
 	indices = nullptr;
 }
@@ -46,6 +47,9 @@ bool Grid::GenerateGridFromTGA(char* filename){
 			// Graph of this function looks like a mountain range.
 			float y = terrainLoader->GetHeight(i,j)*HEIGHT_FACTOR;
 			vertices[i*gridDepth+j].pos = Vector3f(x, y, z);
+			if (y > maxHeight){
+				maxHeight = y;
+			}
 		}
 	}
 
@@ -253,7 +257,12 @@ bool Grid::InitializeBuffers(DWORD* indices,  VertexNT* vertices){
 	return true;	
 }
 
+float Grid::GetMaxHeight(){
+	return maxHeight;
+}
 
-float Grid::GetHeight(float x, float z)const{
-	return 0.3f*( z*sinf(0.1f*x) + x*cosf(0.1f*z) );
+float Grid::GetHeight(int x, int z)const{
+	if (x < 0 || x > gridWidth || z < 0 || z > gridDepth)
+		return 0.0f;
+	return vertices[x*gridDepth+z].pos.y;
 }

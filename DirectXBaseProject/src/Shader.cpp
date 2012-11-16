@@ -201,6 +201,10 @@ The matrices used in this function are created inside the main app, after which
 this function is called to send them from there into the shader during the Render function call.*/
 void Shader::SetShaderParameters(D3DXMATRIX worldMatrix, D3DXMATRIX viewMatrix, D3DXMATRIX projectionMatrix)
 {
+	// Set the wvp matrix inside the shader
+	D3DXMATRIX mWVP = worldMatrix*viewMatrix*projectionMatrix;
+	mWVPMatrix->SetMatrix((float*)&mWVP);
+
 	// Set the world matrix variable inside the shader.
 	mWorldMatrix->SetMatrix((float*)&worldMatrix);
 

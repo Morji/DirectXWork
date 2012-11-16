@@ -33,9 +33,7 @@ public:
 	virtual ~GameObject()
 	{
 		Shutdown();
-	}
-
-	void setTrans(D3DXMATRIX worldMatrix);
+	}	
 
 	bool Initialize(ID3D10Device* device);
 
@@ -59,6 +57,7 @@ private:
 	
 	void ShutdownBuffers();
 	void RenderBuffers();
+	void setTrans(D3DXMATRIX worldMatrix);
 
 	TextureLoader* specularMap;
 	TextureLoader* diffuseMap;	

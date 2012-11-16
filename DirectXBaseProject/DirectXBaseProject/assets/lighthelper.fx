@@ -6,7 +6,6 @@
 
 
 struct Light{
-
 	float3 pos;
 	float3 dir;
 	float4 ambient;

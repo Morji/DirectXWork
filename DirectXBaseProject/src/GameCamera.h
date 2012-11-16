@@ -19,6 +19,7 @@ public:
 	void SetUp(D3DXVECTOR3 up);
 
 	D3DXVECTOR3 GetPosition();
+	D3DXVECTOR3 GetLookAtTarget();
 	D3DXVECTOR3 GetRotation();
 
 	void Render();
@@ -32,7 +33,7 @@ public:
 private:
 	D3DXVECTOR3 position;
 	D3DXVECTOR3 rotation;
-	D3DXVECTOR3 target;
+	D3DXVECTOR3 lookAt;
 	D3DXVECTOR3 up;
 	D3DXVECTOR3 right;
 	D3DXVECTOR3 defaultForward;

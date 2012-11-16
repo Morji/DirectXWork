@@ -6,7 +6,7 @@
 #include "TerrainLoader.h"
 
 #define CELLSPACING		1.0f
-#define	HEIGHT_FACTOR	0.15f;
+#define	HEIGHT_FACTOR	0.2f;
 
 const int TEXTURE_REPEAT = 1;	//how often the texture will repeat over the terrain grid
 
@@ -19,10 +19,14 @@ public:
 	bool GenerateGrid(int width, int depth)const;
 	bool GenerateGridFromTGA(char* filename);
 
+	float GetMaxHeight();
+
+	float GetHeight(int x, int z)const;
+
 private:
 	bool InitializeBuffers(DWORD* indices,  VertexNT* vertices);
 
-	float GetHeight(float,float)const;
+	
 	void  ComputeNormals()const;				// computes the normals of the terrain on a per-vertex level
 	void  ComputeTextureCoords()const;		// computes the texture coordinates of the terrain
 
@@ -31,6 +35,7 @@ private:
 	VertexNT		*vertices;
 	int				gridWidth;
 	int				gridDepth;
+	float			maxHeight;
 };
 
 #endif

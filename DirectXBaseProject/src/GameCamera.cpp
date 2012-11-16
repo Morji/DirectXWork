@@ -37,8 +37,6 @@ void GameCamera::MouseMove(int wndWidth, int wndHeight){
 //The Render function uses the position and rotation of the camera to build and update the view matrix.
 void GameCamera::Render()
 {
-	D3DXVECTOR3 lookAt;
-	
 	D3DXMATRIX rotationMatrix;
 
 	// Setup the up vector.
@@ -108,6 +106,10 @@ D3DXVECTOR3 GameCamera::GetPosition(){
 
 D3DXVECTOR3 GameCamera::GetRotation(){
 	return rotation;
+}
+
+D3DXVECTOR3 GameCamera::GetLookAtTarget(){
+	return lookAt;
 }
 
 void GameCamera::GetViewMatrix(D3DXMATRIX& viewMatrix)
