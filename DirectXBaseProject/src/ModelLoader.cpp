@@ -164,15 +164,15 @@ bool ModelLoader::PopulateVertexData(FbxMesh *pMesh){
 						break;
 				}
 				fbxUV = fbxLayerUV->GetDirectArray().GetAt(UVIndex);
-				vertexData[fbxCornerIndex].texC = Vector2f(fbxUV.mData[0],fbxUV.mData[1]);
+				vertexData[fbxCornerIndex].texC = Vector2f(fbxUV.mData[0],-fbxUV.mData[1]);//invert the V texture coordinate
 			}
 		}
 	}
 
-	for (int i = 0; i < vertexData.size(); i++){
+	/*for (int i = 0; i < vertexData.size(); i++){
 		if (vertexData[i].texC == Vector2f(0,0))
-			std::cout << "Zero normal detected" << std::endl;
-	}
+			std::cout << "Zero tex coord detected" << std::endl;
+	}*/
 
 	std::cout << "Finished Loading" << std::endl;
 
@@ -181,14 +181,10 @@ bool ModelLoader::PopulateVertexData(FbxMesh *pMesh){
 
 bool ModelLoader::PopulateIndexData(FbxMesh *pMesh){
 	std::cout << "Loading " << pMesh->GetPolygonVertexCount() << " indices" << std::endl;
-	FbxVector4 normal;
-	for (int i = 0; i < pMesh->GetPolygonCount();i++){
-		for (int j = 0; j < pMesh->GetPolygonSize(i); j++){
-			indexData.push_back(pMesh->GetPolygonVertex(i,j));
-			/*pMesh->GetPolygonVertexNormal(i,j,normal);
-			if (!normal.IsZero()){
-				std::cout << "Normal x: " << normal.mData[0] << " y:" << normal.mData[1] << " z:" << normal.mData[2] << std::endl;
-			}*/
+	for (int i = 0; i < pMesh->GetPolygonCount(); i++) {
+		for (int j = 0; j < pMesh->GetPolygonSize(i); j++) {
+			int fbxCornerIndex = pMesh->GetPolygonVertex(i, j);
+			indexData.push_back(fbxCornerIndex);
 		}
 	}
 

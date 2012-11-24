@@ -17,6 +17,16 @@ void GameObject::setTrans(D3DXMATRIX worldMatrix){
 	objMatrix *= worldMatrix;
 }
 
+void GameObject::MoveFacing(float speed){
+	pos += Vector3f(objMatrix.m[2][0],0,objMatrix.m[2][2])*speed;
+}
+
+void GameObject::MoveStrafe(float speed){
+	Vector3f right;
+	D3DXVec3TransformNormal(&right, &Vector3f(1,0,0), &objMatrix);//get the objects right vector
+	pos += speed*right;
+}
+
 //The Initialize function will call the initialization functions for the vertex and index buffers.
 bool GameObject::Initialize(ID3D10Device* device){
 	bool result;
@@ -179,20 +189,24 @@ bool GameObject::LoadTexture(WCHAR* diffuseMapTex, WCHAR* specularMapTex){
 	}
 
 	// Initialize the texture object.
-	result = diffuseMap->Initialize(md3dDevice, diffuseMapTex);
-	if(!result){
-		return false;
+	if (diffuseMapTex != NULL){
+		result = diffuseMap->Initialize(md3dDevice, diffuseMapTex);
+		if(!result){
+			return false;
+		}
 	}
-	result = specularMap->Initialize(md3dDevice, specularMapTex);
-	if(!result){
-		return false;
+	if (specularMapTex != NULL){
+		result = specularMap->Initialize(md3dDevice, specularMapTex);
+		if(!result){
+			return false;
+		}
 	}
 	return true;
 }
 
 bool GameObject::LoadMultiTexture(WCHAR* specularMapTex, WCHAR* blendMapTex,	WCHAR* diffuseMapRV1Tex,
-																									WCHAR* diffuseMapRV2Tex,
-																									WCHAR* diffuseMapRV3Tex){
+																				WCHAR* diffuseMapRV2Tex,
+																				WCHAR* diffuseMapRV3Tex){
 	bool result;
 
 	// Create the texture object.
@@ -204,7 +218,7 @@ bool GameObject::LoadMultiTexture(WCHAR* specularMapTex, WCHAR* blendMapTex,	WCH
 		if (!diffuseMapRV[i])
 			return false;
 	}
-	if(!specularMap)	{
+	if(!specularMap){
 		return false;
 	}
 	if (!blendMap){
@@ -219,13 +233,17 @@ bool GameObject::LoadMultiTexture(WCHAR* specularMapTex, WCHAR* blendMapTex,	WCH
 		return false;
 
 	// Initialize the texture object.
-	result = specularMap->Initialize(md3dDevice, specularMapTex);
-	if(!result){
-		return false;
+	if (specularMapTex != NULL){
+		result = specularMap->Initialize(md3dDevice, specularMapTex);
+		if(!result){
+			return false;
+		}
 	}
-	result = blendMap->Initialize(md3dDevice, blendMapTex);
-	if(!result){
-		return false;
+	if (blendMapTex != NULL){
+		result = blendMap->Initialize(md3dDevice, blendMapTex);
+		if(!result){
+			return false;
+		}
 	}
 	return true;
 }

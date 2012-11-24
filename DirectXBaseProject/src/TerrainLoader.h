@@ -25,7 +25,6 @@ private:
 	FILE	*LoadTGA(char* filename);		// loads in terrain heightmap to a file returns a pointer to the file
 	bool	ComputeHeights(FILE * fTGA);	// computes the heights from the TGA file
 	void	SmoothHeights(float factor);	// smooths out the heights in the terrain by the given factor
-	
 
 private:
 	float	*height;	// an array to hold the height values from the heightmap

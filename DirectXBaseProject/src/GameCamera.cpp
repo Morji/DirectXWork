@@ -3,8 +3,6 @@
 
 GameCamera::GameCamera(void)
 {
-	position = D3DXVECTOR3(0,0,0);
-	rotation = D3DXVECTOR3(0,0,0);
 	right = D3DXVECTOR3(1.0f,0.0f,0.0f);
 	forward = D3DXVECTOR3(0.0f,0.0f,1.0f);
 	defaultRight = D3DXVECTOR3(1.0f,0.0f,0.0f);
@@ -13,10 +11,18 @@ GameCamera::GameCamera(void)
 	moveLeftRight = moveBackForward = yaw = pitch = yaw = 0.0f;
 	mouseLastPos.x = mouseLastPos.y = 0;
 	camMoveFactor = 15.0f;
+	attached = false;
 }
 
 GameCamera::~GameCamera(void)
 {
+}
+
+void GameCamera::SetPivotPoint(D3DXVECTOR3 &pos,D3DXVECTOR3 &rotation){
+	this->position = position;
+	this->rotation = rotation;
+
+	attached = true;
 }
 
 void GameCamera::MouseMove(int wndWidth, int wndHeight){	
@@ -43,6 +49,8 @@ void GameCamera::Render()
 	// Setup where the camera is looking by default.
 	lookAt = D3DXVECTOR3(0,0,1);
 
+	//yaw   = rotation.y;
+
 	// Create the rotation matrix from the yaw, pitch, and roll values.
 	D3DXMatrixRotationYawPitchRoll(&rotationMatrix, yaw, pitch, 0);
 
@@ -56,11 +64,12 @@ void GameCamera::Render()
 	D3DXVec3TransformNormal(&up, &up, &rotationMatrix);
 	D3DXVec3TransformNormal(&forward, &defaultForward, &rotationMatrix);
 
-	position += moveLeftRight*right;
-	position += moveBackForward*forward;
-
-	moveLeftRight = 0.0f;
-	moveBackForward = 0.0f;
+	//if (!attached){
+		position += moveLeftRight*right;
+		position += moveBackForward*forward;
+		moveLeftRight = 0.0f;
+		moveBackForward = 0.0f;
+	//}
 
 	// Translate the rotated camera position to the location of the viewer.
 	lookAt = position + lookAt;

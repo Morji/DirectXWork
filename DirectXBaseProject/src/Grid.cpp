@@ -4,6 +4,7 @@
 Grid::Grid(void)
 {
 	maxHeight = 0.0f;
+	heightData = nullptr;
 	vertices = nullptr;
 	indices = nullptr;
 }
@@ -20,10 +21,14 @@ Grid::~Grid(void)
 		delete [] indices;
 		indices = nullptr;		
 	}
+	if (heightData){
+		delete [] heightData;
+		heightData = nullptr;
+	}
 }
 
 bool Grid::GenerateGridFromTGA(char* filename){
-	TerrainLoader	*terrainLoader = new TerrainLoader();
+	TerrainLoader *terrainLoader = new TerrainLoader();
 
 	if (!terrainLoader->LoadTerrain(filename)){
 		return false;
@@ -34,6 +39,8 @@ bool Grid::GenerateGridFromTGA(char* filename){
 
 	mVertexCount = (gridWidth*gridDepth);
 	vertices = new VertexNT[mVertexCount];
+
+	heightData = new float[gridWidth*gridDepth];
 
 	float dx = CELLSPACING;
 	float halfWidth = (gridWidth-1)*dx*0.5f;
@@ -46,6 +53,7 @@ bool Grid::GenerateGridFromTGA(char* filename){
 			float x = -halfWidth + j*dx;
 			// Graph of this function looks like a mountain range.
 			float y = terrainLoader->GetHeight(i,j)*HEIGHT_FACTOR;
+			heightData[i*gridDepth+j] = y;//place in height data array
 			vertices[i*gridDepth+j].pos = Vector3f(x, y, z);
 			if (y > maxHeight){
 				maxHeight = y;
@@ -261,8 +269,40 @@ float Grid::GetMaxHeight(){
 	return maxHeight;
 }
 
-float Grid::GetHeight(int x, int z)const{
-	if (x < 0 || x > gridWidth || z < 0 || z > gridDepth)
-		return 0.0f;
-	return vertices[x*gridDepth+z].pos.y;
+float Grid::GetHeight(float x, float z){
+	// Transform from terrain local space to “cell” space.
+	float c = (x + 0.5f*gridWidth) / CELLSPACING;
+	float d = (z - 0.5f*gridDepth) / -CELLSPACING;
+	// Get the row and column we are in.
+	int row = (int)floorf(d);//z
+	int col = (int)floorf(c);//x
+
+	// Grab the heights of the cell we are in.
+	// A*--*B
+	// | /|
+	// |/ |
+	// C*--*D
+	float A = heightData[row*gridWidth + col];
+	float B = heightData[row*gridWidth + col + 1];
+	float C = heightData[(row+1)*gridWidth + col];
+	float D = heightData[(row+1)*gridWidth + col + 1];
+
+	// Find out which of the two triangles of the cell we are in
+	// if s + t <= 1 we are in the upper triangle
+	// else we are in the lower one
+	float s = c - (float)col;
+	float t = d - (float)row;
+
+	// If upper triangle ABC.
+	if( s + t <= 1.0f){
+		float uy = B - A;
+		float vy = C - A;
+		return A + s*uy + t*vy;
+	}
+	// lower triangle DCB.
+	else{ 	
+		float uy = C - D;
+		float vy = B - D;
+		return D + (1.0f-s)*uy + (1.0f-t)*vy;
+	}
 }

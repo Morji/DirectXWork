@@ -14,6 +14,7 @@ Shader::Shader(void)
 
 Shader::~Shader(void)
 {
+	ShutdownShader();
 }
 
 /*The Initialize function will call the initialization function for the shader. 

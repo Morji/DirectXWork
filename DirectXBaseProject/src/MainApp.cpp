@@ -19,6 +19,7 @@
 #include "Grid.h"
 #include "ModelObject.h"
 #include "console.h"
+#include <list>
 
 class MainApp : public D3DApp
 {
@@ -44,10 +45,14 @@ private:
  
 private:
 
+	std::list<Shader*>		shaderList;
+	std::list<GameObject*>	gameObjectList;
+
 	Light			light[3]; // 0 (parallel), 1 (point), 2 (spot)
 	LIGHT_TYPE		lightType; // 0 (parallel), 1 (point), 2 (spot)
 
 	ModelObject		*model;
+	//ModelObject	*model2;
 	Grid			*grid;
 
 	GameCamera		*camera;
@@ -62,6 +67,8 @@ private:
 	D3DXMATRIX mView;
 	D3DXMATRIX mProj;
 	D3DXMATRIX mWVP;
+
+	bool			mouseMovement;
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
@@ -92,6 +99,8 @@ MainApp::MainApp(HINSTANCE hInstance)
 
 	aspectRatio = 0.5f;
 	rotAngle = 0.0f;
+
+	mouseMovement = false;
 
 	lightType = L_PARALLEL;//start light type is parallel
 
@@ -131,43 +140,29 @@ MainApp::~MainApp(){
 	if( md3dDevice )
 		md3dDevice->ClearState();
 
-	// Release the light shader object.
-	if(lightShader){
-		lightShader->Shutdown();
-		delete lightShader;
-		lightShader = NULL;
+	//delete every shader in the list
+	while (!shaderList.empty()){
+		Shader* shader = shaderList.back();
+		if (shader){
+			shader->Shutdown();
+			delete shader;
+			shader = nullptr;
+		}
+		shaderList.pop_back();
 	}
+	shaderList.clear();
 
-	if (colorShader){
-		colorShader->Shutdown();
-		delete colorShader;
-		colorShader = NULL;
+	//delete every game object in the list
+	while (!gameObjectList.empty()){
+		GameObject* object = gameObjectList.back();
+		if (object){
+			object->Shutdown();
+			delete object;
+			object = nullptr;
+		}
+		gameObjectList.pop_back();
 	}
-
-	if(texShader){
-		texShader->Shutdown();
-		delete texShader;
-		texShader = NULL;
-	}
-
-	if (multiTexShader){
-		multiTexShader->Shutdown();
-		delete multiTexShader;
-		multiTexShader = NULL;
-	}
-
-	// Release the model object.
-	if(model){
-		model->Shutdown();
-		delete model;
-		model = NULL;
-	}
-
-	if (grid){
-		grid->Shutdown();
-		delete grid;
-		grid = NULL;
-	}
+	gameObjectList.clear();
 	// Release the camera object.
 	if(camera){
 		delete camera;
@@ -179,51 +174,41 @@ void MainApp::initApp(){
 	D3DApp::initApp();	
 	bool result;
 
-	colorShader = new Shader();
-	// Initialize the multi-tex shader object.
-	result = colorShader->Initialize(md3dDevice, getMainWnd());
-	if(!result){
-		MessageBox(getMainWnd(), L"Could not initialize the color shader object.", L"Error", MB_OK);
-	}
-
 	// Create the camera object.
 	camera = new GameCamera();
-
 	// Set the initial position of the camera.
 	camera->SetPosition(0.0f, 0.0f, -10.0f);
 
 	model = new ModelObject();
-
 	grid = new Grid();
 
-	result = grid->InitializeWithMultiTexture(md3dDevice,L"assets/defaultspec.dds", L"assets/blendmap.jpg",L"assets/stone2.dds",
-																											 L"assets/ground0.dds",
-																											 L"assets/grass0.dds");
-
+	result = grid->InitializeWithMultiTexture(md3dDevice,L"assets/defaultspec.dds", NULL,L"assets/stone2.dds",
+																						 L"assets/ground0.dds",
+																						 L"assets/grass0.dds");
 	if(!result){
 		MessageBox(getMainWnd(), L"Could not initialize the grid object.", L"Error", MB_OK);
 	}
-
 	result = grid->GenerateGridFromTGA("assets/heightmap.tga");
-
 	if(!result){
 		MessageBox(getMainWnd(), L"Could properly generate heightmap.", L"Error", MB_OK);
 	}
+	gameObjectList.push_back(grid);
 
-	result = model->InitializeWithTexture(md3dDevice,L"assets/models/Superman/Superman_Diff.jpg",L"assets/models/Superman/Superman_Spec.jpg");
+	result = model->InitializeWithTexture(md3dDevice,L"assets/models/Grunt/grunt_texture.jpg",NULL);
 
 	if(!result){
 		MessageBox(getMainWnd(), L"Could not initialize the model object.", L"Error", MB_OK);
 	}
 
-	result = model->LoadModelFromFBX("assets/models/Superman/Superman.fbx");
-
+	result = model->LoadModelFromFBX("assets/models/Grunt/Grunt.fbx");
 	if (!result){
 		MessageBox(getMainWnd(), L"Could not load in the FBX object.", L"Error", MB_OK);
 	}
-
-	model->scale = Vector3f(0.1f,0.1f,0.1f);
-
+	gameObjectList.push_back(model);
+	model->pos = Vector3f(0,1.5f,0);
+	/*model2 = new ModelObject(*model);
+	model2->pos = Vector3f(8,7,0);
+	gameObjectList.push_back(model2);*/
 	// Create the text shader object.
 	texShader = new TexShader();
 	// Initialize the tex shader object.
@@ -232,23 +217,28 @@ void MainApp::initApp(){
 		MessageBox(getMainWnd(), L"Could not initialize the tex shader object.", L"Error", MB_OK);
 	}
 
+	shaderList.push_back(texShader);
 	multiTexShader = new TexShader();
 	// Initialize the multi-tex shader object.
 	result = multiTexShader->Initialize(md3dDevice, getMainWnd(),MULTI);
 	if(!result){
 		MessageBox(getMainWnd(), L"Could not initialize the multi tex shader object.", L"Error", MB_OK);
 	}
+
+	shaderList.push_back(multiTexShader);
+
+	camera->SetPivotPoint(model->pos,model->theta);
 }
 
 ///Any input key processing - to it here
 void MainApp::processInput(){
-
-	if ((GetKeyState(VK_LBUTTON) & 0x80) != 0)
-		camera->MouseMove(mClientWidth,mClientHeight);
-
 	if (GetAsyncKeyState(VK_ESCAPE)){
 		PostQuitMessage(0);
 	}
+
+	if (mouseMovement){
+		camera->MouseMove(mClientWidth,mClientHeight);
+	}	
 
 	if (GetAsyncKeyState('W')){
 		camera->moveBackForward += camera->camMoveFactor*mTimer.getDeltaTime();
@@ -263,13 +253,36 @@ void MainApp::processInput(){
 		camera->moveLeftRight += camera->camMoveFactor*mTimer.getDeltaTime();
 	}
 
+	if (GetAsyncKeyState(VK_RETURN) & 0x80 != 0){
+		mouseMovement = !mouseMovement;
+	}
+
 	if (GetAsyncKeyState('F')){
 		model->theta += Vector3f(0,1.5f,0)*mTimer.getDeltaTime();
 	}
 
-	if (GetAsyncKeyState('R')){
-		model->theta += Vector3f(1.5f,0,0)*mTimer.getDeltaTime();
+	if (GetAsyncKeyState(VK_UP)){
+		model->MoveFacing(10*mTimer.getDeltaTime());
+		model->pos.y = grid->GetHeight(model->pos.x,model->pos.z) + 1.0f;
 	}
+
+	if (GetAsyncKeyState(VK_DOWN)){
+		model->MoveFacing(-10*mTimer.getDeltaTime());
+		model->pos.y = grid->GetHeight(model->pos.x,model->pos.z) + 1.0f;
+	}
+
+	if (GetAsyncKeyState(VK_LEFT)){
+		model->MoveStrafe(-10*mTimer.getDeltaTime());
+		model->pos.y = grid->GetHeight(model->pos.x,model->pos.z) + 1.0f;
+	}
+
+	if (GetAsyncKeyState(VK_RIGHT)){
+		model->MoveStrafe(10*mTimer.getDeltaTime());
+		model->pos.y = grid->GetHeight(model->pos.x,model->pos.z) + 1.0f;
+	}
+
+	//camera->SetPosition(model->pos);
+	//camera->SetRotation(model->theta);
 
 	if (GetAsyncKeyState('B')){
 		swapRasterizers();
@@ -317,6 +330,9 @@ void MainApp::drawScene(){
 	//Render the Model
 	model->Render(mWVP);
 	texShader->RenderTexturing(md3dDevice,model->GetIndexCount(),model->objMatrix,mView,mProj,camera->GetPosition(),light[lightType],model->GetDiffuseTexture(),model->GetSpecularTexture());
+
+	/*model2->Render(mWVP);
+	texShader->RenderTexturing(md3dDevice,model2->GetIndexCount(),model2->objMatrix,mView,mProj,camera->GetPosition(),light[lightType],model2->GetDiffuseTexture(),model2->GetSpecularTexture());*/
 
 	grid->Render(mWVP);
 	multiTexShader->RenderMultiTexturing(md3dDevice,grid->GetIndexCount(),grid->objMatrix,mView,mProj,camera->GetPosition(),light[lightType],

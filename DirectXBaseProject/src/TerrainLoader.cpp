@@ -127,14 +127,12 @@ bool TerrainLoader::ComputeHeights(FILE * fTGA){
 
 	delete [] terrainTexture_imageData;
 	terrainTexture_imageData = nullptr;
-	
-	
 
 	//smooth out the terrain
 	for (int i = 0; i < 4; i++)
 		SmoothHeights(0.75f);
 
-	return true;															// Return success
+	return true;															
 }
 
 //Smooth out each vertex depending on the nearest vertices to it using the float as the smoothing factor on how much to decrease/increase height

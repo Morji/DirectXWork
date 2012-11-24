@@ -21,7 +21,7 @@ public:
 
 	float GetMaxHeight();
 
-	float GetHeight(int x, int z)const;
+	float GetHeight(float x, float z);
 
 private:
 	bool InitializeBuffers(DWORD* indices,  VertexNT* vertices);
@@ -36,6 +36,8 @@ private:
 	int				gridWidth;
 	int				gridDepth;
 	float			maxHeight;
+
+	float			*heightData;			//array containing the height data for ease of access for terrain collision
 };
 
 #endif

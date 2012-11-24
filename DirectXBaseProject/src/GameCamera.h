@@ -18,6 +18,8 @@ public:
 	void SetRotation(D3DXVECTOR3 rotation);
 	void SetUp(D3DXVECTOR3 up);
 
+	void SetPivotPoint(D3DXVECTOR3 &position,D3DXVECTOR3 &rotation);
+
 	D3DXVECTOR3 GetPosition();
 	D3DXVECTOR3 GetLookAtTarget();
 	D3DXVECTOR3 GetRotation();
@@ -31,6 +33,8 @@ public:
 	float yaw, pitch, roll;
 	float camMoveFactor;
 private:
+	bool		attached;	//whether or not the camera is "attached" to an object
+
 	D3DXVECTOR3 position;
 	D3DXVECTOR3 rotation;
 	D3DXVECTOR3 lookAt;

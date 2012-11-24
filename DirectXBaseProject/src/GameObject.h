@@ -35,6 +35,9 @@ public:
 		Shutdown();
 	}	
 
+	void MoveFacing(float speed);	//moves the object towards(or away from if speed < 0) the direction it is facing
+	void MoveStrafe(float speed);	//moves the object by strafing object 
+
 	bool Initialize(ID3D10Device* device);
 
 	bool InitializeWithTexture(ID3D10Device* device, WCHAR* diffuseMapTex, WCHAR* specularMapTex);
@@ -58,6 +61,7 @@ private:
 	void ShutdownBuffers();
 	void RenderBuffers();
 	void setTrans(D3DXMATRIX worldMatrix);
+	
 
 	TextureLoader* specularMap;
 	TextureLoader* diffuseMap;	
