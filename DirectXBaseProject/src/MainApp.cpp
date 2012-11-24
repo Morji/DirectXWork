@@ -17,6 +17,8 @@
 #include "LightShader.h"
 #include "TexShader.h"
 #include "Grid.h"
+#include "ModelObject.h"
+#include "console.h"
 
 class MainApp : public D3DApp
 {
@@ -45,7 +47,7 @@ private:
 	Light			light[3]; // 0 (parallel), 1 (point), 2 (spot)
 	LIGHT_TYPE		lightType; // 0 (parallel), 1 (point), 2 (spot)
 
-	CubeObject		*cube;
+	ModelObject		*model;
 	Grid			*grid;
 
 	GameCamera		*camera;
@@ -70,10 +72,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 	_CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
 #endif
 
-
+	ShowWin32Console();
+	
 	MainApp theApp(hInstance);
 	
 	theApp.initApp();
+
+	
 
 	return theApp.run();
 }
@@ -114,7 +119,7 @@ MainApp::MainApp(HINSTANCE hInstance)
 	light[2].range    = 10000.0f;
 
 	//initialize variables to null
-	cube = NULL;
+	model = NULL;
 	grid = NULL;
 	camera = NULL;
 	lightShader = NULL;	
@@ -152,10 +157,10 @@ MainApp::~MainApp(){
 	}
 
 	// Release the model object.
-	if(cube){
-		cube->Shutdown();
-		delete cube;
-		cube = NULL;
+	if(model){
+		model->Shutdown();
+		delete model;
+		model = NULL;
 	}
 
 	if (grid){
@@ -174,25 +179,50 @@ void MainApp::initApp(){
 	D3DApp::initApp();	
 	bool result;
 
+	colorShader = new Shader();
+	// Initialize the multi-tex shader object.
+	result = colorShader->Initialize(md3dDevice, getMainWnd());
+	if(!result){
+		MessageBox(getMainWnd(), L"Could not initialize the color shader object.", L"Error", MB_OK);
+	}
+
 	// Create the camera object.
 	camera = new GameCamera();
 
 	// Set the initial position of the camera.
 	camera->SetPosition(0.0f, 0.0f, -10.0f);
 
-	cube = new CubeObject();
+	model = new ModelObject();
 
 	grid = new Grid();
 
 	result = grid->InitializeWithMultiTexture(md3dDevice,L"assets/defaultspec.dds", L"assets/blendmap.jpg",L"assets/stone2.dds",
-																										   L"assets/ground0.dds",
-																										   L"assets/grass0.dds");
+																											 L"assets/ground0.dds",
+																											 L"assets/grass0.dds");
 
 	if(!result){
 		MessageBox(getMainWnd(), L"Could not initialize the grid object.", L"Error", MB_OK);
 	}
 
-	grid->GenerateGridFromTGA("assets/heightmap.tga");
+	result = grid->GenerateGridFromTGA("assets/heightmap.tga");
+
+	if(!result){
+		MessageBox(getMainWnd(), L"Could properly generate heightmap.", L"Error", MB_OK);
+	}
+
+	result = model->InitializeWithTexture(md3dDevice,L"assets/models/Superman/Superman_Diff.jpg",L"assets/models/Superman/Superman_Spec.jpg");
+
+	if(!result){
+		MessageBox(getMainWnd(), L"Could not initialize the model object.", L"Error", MB_OK);
+	}
+
+	result = model->LoadModelFromFBX("assets/models/Superman/Superman.fbx");
+
+	if (!result){
+		MessageBox(getMainWnd(), L"Could not load in the FBX object.", L"Error", MB_OK);
+	}
+
+	model->scale = Vector3f(0.1f,0.1f,0.1f);
 
 	// Create the text shader object.
 	texShader = new TexShader();
@@ -213,7 +243,8 @@ void MainApp::initApp(){
 ///Any input key processing - to it here
 void MainApp::processInput(){
 
-	camera->MouseMove(mClientWidth,mClientHeight);
+	if ((GetKeyState(VK_LBUTTON) & 0x80) != 0)
+		camera->MouseMove(mClientWidth,mClientHeight);
 
 	if (GetAsyncKeyState(VK_ESCAPE)){
 		PostQuitMessage(0);
@@ -233,7 +264,11 @@ void MainApp::processInput(){
 	}
 
 	if (GetAsyncKeyState('F')){
-		cube->theta += D3DXVECTOR3(0,1.5f,0)*mTimer.getDeltaTime();
+		model->theta += Vector3f(0,1.5f,0)*mTimer.getDeltaTime();
+	}
+
+	if (GetAsyncKeyState('R')){
+		model->theta += Vector3f(1.5f,0,0)*mTimer.getDeltaTime();
 	}
 
 	if (GetAsyncKeyState('B')){
@@ -279,6 +314,10 @@ void MainApp::drawScene(){
 	// Get the world, view, and projection matrices from the camera and d3d objects.
 	camera->GetViewMatrix(mView);
 
+	//Render the Model
+	model->Render(mWVP);
+	texShader->RenderTexturing(md3dDevice,model->GetIndexCount(),model->objMatrix,mView,mProj,camera->GetPosition(),light[lightType],model->GetDiffuseTexture(),model->GetSpecularTexture());
+
 	grid->Render(mWVP);
 	multiTexShader->RenderMultiTexturing(md3dDevice,grid->GetIndexCount(),grid->objMatrix,mView,mProj,camera->GetPosition(),light[lightType],
 																															 grid->GetSpecularTexture(),
@@ -288,6 +327,8 @@ void MainApp::drawScene(){
 																															 grid->GetDiffuseMap(2),
 																															 grid->GetMaxHeight(),
 																															 lightType);
+
+
 	// We specify DT_NOCLIP, so we do not care about width/height of the rect.
 	RECT R = {5, 5, 0, 0};
 	md3dDevice->RSSetState(0);

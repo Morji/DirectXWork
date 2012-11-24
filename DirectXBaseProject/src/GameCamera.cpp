@@ -19,8 +19,6 @@ GameCamera::~GameCamera(void)
 {
 }
 
-
-
 void GameCamera::MouseMove(int wndWidth, int wndHeight){	
 	POINT mousePos; 
 	int mid_x = wndWidth >> 1; //dividing by 2 in a fancy way

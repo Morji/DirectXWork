@@ -11,7 +11,7 @@ public:
 		Shutdown();
 	}
 
-protected:
+private:
 	bool SetupArraysAndInitBuffers();
 };
 

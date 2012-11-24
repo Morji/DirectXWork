@@ -20,5 +20,11 @@ struct VertexC
 	Vector3f	pos;
 	Color		color;
 };
+
+struct Vertex
+{
+	Vector3f	pos;
+};
+
  
 #endif // VERTEX_H

@@ -6,7 +6,11 @@ void GameObject::setTrans(D3DXMATRIX worldMatrix){
 	D3DXMatrixIdentity(&objMatrix);
 	D3DXMatrixScaling(&m, scale.x, scale.y, scale.z);
 	objMatrix*=m;
+	D3DXMatrixRotationX(&m, theta.x);
+	objMatrix*=m;
 	D3DXMatrixRotationY(&m, theta.y);
+	objMatrix*=m;
+	D3DXMatrixRotationZ(&m, theta.z);	
 	objMatrix*=m;
 	D3DXMatrixTranslation(&m, pos.x, pos.y, pos.z);
 	objMatrix*=m;

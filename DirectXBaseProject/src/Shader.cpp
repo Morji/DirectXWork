@@ -142,6 +142,7 @@ bool Shader::InitializeShader(ID3D10Device* device, HWND hwnd, WCHAR* filename)
 	mWorldMatrix = mEffect->GetVariableByName("worldMatrix")->AsMatrix();
 	mViewMatrix = mEffect->GetVariableByName("viewMatrix")->AsMatrix();
 	mProjectionMatrix = mEffect->GetVariableByName("projectionMatrix")->AsMatrix();
+	mWVPMatrix = mEffect->GetVariableByName("wvpMatrix")->AsMatrix();
 
 	return true;
 }
