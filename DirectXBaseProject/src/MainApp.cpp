@@ -33,20 +33,26 @@ public:
 	void processInput();
 
 	void initApp();
+	void initCameras();
+	void initModels();
+	void initShaders();
 	void onResize();
 	void updateScene(float dt);
 	void drawScene(); 
 	void mouseScroll(int amount);
-
+	
 private:
 	void buildFX();
 	void buildVertexLayouts();
 	void animateLights();
+	void SwitchCameras();
+	void MouseInput();
  
 private:
 
 	std::list<Shader*>		shaderList;
 	std::list<GameObject*>	gameObjectList;
+	std::list<GameCamera*>	gameCameraList;
 
 	Light			light[3]; // 0 (parallel), 1 (point), 2 (spot)
 	LIGHT_TYPE		lightType; // 0 (parallel), 1 (point), 2 (spot)
@@ -55,7 +61,9 @@ private:
 	//ModelObject	*model2;
 	Grid			*grid;
 
-	GameCamera		*camera;
+	GameCamera		*godCamera;
+	GameCamera		*playerCamera;
+	GameCamera		*currentCam;
 
 	TexShader		*texShader;
 	TexShader		*multiTexShader;
@@ -68,7 +76,7 @@ private:
 	D3DXMATRIX mProj;
 	D3DXMATRIX mWVP;
 
-	bool			mouseMovement;
+	bool			mouseInput;
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
@@ -100,7 +108,7 @@ MainApp::MainApp(HINSTANCE hInstance)
 	aspectRatio = 0.5f;
 	rotAngle = 0.0f;
 
-	mouseMovement = false;
+	mouseInput = false;
 
 	lightType = L_PARALLEL;//start light type is parallel
 
@@ -130,7 +138,6 @@ MainApp::MainApp(HINSTANCE hInstance)
 	//initialize variables to null
 	model = NULL;
 	grid = NULL;
-	camera = NULL;
 	lightShader = NULL;	
 	texShader = NULL;
 	colorShader = NULL;
@@ -163,25 +170,49 @@ MainApp::~MainApp(){
 		gameObjectList.pop_back();
 	}
 	gameObjectList.clear();
-	// Release the camera object.
-	if(camera){
-		delete camera;
-		camera = NULL;
+
+	//delete every camera object in the list
+	while (!gameCameraList.empty()){
+		GameCamera* object = gameCameraList.back();
+		if (object){
+			delete object;
+			object = nullptr;
+		}
+		gameCameraList.pop_back();
 	}
+	gameCameraList.clear();
 }
 
 void MainApp::initApp(){
-	D3DApp::initApp();	
-	bool result;
+	D3DApp::initApp();		
 
-	// Create the camera object.
-	camera = new GameCamera();
+	initCameras();
+	initModels();
+	initShaders();	
+}
+
+void MainApp::initCameras(){
+	// Create the god camera object.
+	godCamera = new GameCamera();
 	// Set the initial position of the camera.
-	camera->SetPosition(0.0f, 0.0f, -10.0f);
+	godCamera->SetPosition(0.0f, 0.0f, -10.0f);
+	gameCameraList.push_back(godCamera);
+
+	// Create the player camera object.
+	playerCamera = new GameCamera(true);
+	playerCamera->SetPivotPoint(Vector3f(0,15,-15));
+	// Set the initial position of the camera.
+	gameCameraList.push_back(playerCamera);
+
+	// make the current camera to be the god cam
+	currentCam = godCamera;
+}
+
+void MainApp::initModels(){
+	bool result;
 
 	model = new ModelObject();
 	grid = new Grid();
-
 	result = grid->InitializeWithMultiTexture(md3dDevice,L"assets/defaultspec.dds", NULL,L"assets/stone2.dds",
 																						 L"assets/ground0.dds",
 																						 L"assets/grass0.dds");
@@ -209,6 +240,10 @@ void MainApp::initApp(){
 	/*model2 = new ModelObject(*model);
 	model2->pos = Vector3f(8,7,0);
 	gameObjectList.push_back(model2);*/
+}
+
+void MainApp::initShaders(){
+	bool result;
 	// Create the text shader object.
 	texShader = new TexShader();
 	// Initialize the tex shader object.
@@ -226,8 +261,6 @@ void MainApp::initApp(){
 	}
 
 	shaderList.push_back(multiTexShader);
-
-	camera->SetPivotPoint(model->pos,model->theta);
 }
 
 ///Any input key processing - to it here
@@ -236,66 +269,96 @@ void MainApp::processInput(){
 		PostQuitMessage(0);
 	}
 
-	if (mouseMovement){
-		camera->MouseMove(mClientWidth,mClientHeight);
-	}	
-
-	if (GetAsyncKeyState('W')){
-		camera->moveBackForward += camera->camMoveFactor*mTimer.getDeltaTime();
+	//if we are using the god camera - use standart input to move it
+	if (currentCam == godCamera){
+		if (GetAsyncKeyState('W')){
+			godCamera->moveBackForward += godCamera->camMoveFactor*mTimer.getDeltaTime();
+		}
+		if (GetAsyncKeyState('S')){
+			godCamera->moveBackForward -= godCamera->camMoveFactor*mTimer.getDeltaTime();
+		}
+		if (GetAsyncKeyState('A')){
+			godCamera->moveLeftRight -= godCamera->camMoveFactor*mTimer.getDeltaTime();
+		}
+		if (GetAsyncKeyState('D')){
+			godCamera->moveLeftRight += godCamera->camMoveFactor*mTimer.getDeltaTime();
+		}
 	}
-	if (GetAsyncKeyState('S')){
-		camera->moveBackForward -= camera->camMoveFactor*mTimer.getDeltaTime();
-	}
-	if (GetAsyncKeyState('A')){
-		camera->moveLeftRight -= camera->camMoveFactor*mTimer.getDeltaTime();
-	}
-	if (GetAsyncKeyState('D')){
-		camera->moveLeftRight += camera->camMoveFactor*mTimer.getDeltaTime();
-	}
-
-	if (GetAsyncKeyState(VK_RETURN) & 0x80 != 0){
-		mouseMovement = !mouseMovement;
-	}
-
-	if (GetAsyncKeyState('F')){
-		model->theta += Vector3f(0,1.5f,0)*mTimer.getDeltaTime();
-	}
-
-	if (GetAsyncKeyState(VK_UP)){
-		model->MoveFacing(10*mTimer.getDeltaTime());
-		model->pos.y = grid->GetHeight(model->pos.x,model->pos.z) + 1.0f;
-	}
-
-	if (GetAsyncKeyState(VK_DOWN)){
-		model->MoveFacing(-10*mTimer.getDeltaTime());
-		model->pos.y = grid->GetHeight(model->pos.x,model->pos.z) + 1.0f;
-	}
-
-	if (GetAsyncKeyState(VK_LEFT)){
-		model->MoveStrafe(-10*mTimer.getDeltaTime());
-		model->pos.y = grid->GetHeight(model->pos.x,model->pos.z) + 1.0f;
+	//else if we are using the player camera switch input to player movement
+	else{
+		if (GetAsyncKeyState('W')){
+			model->MoveFacing(10*mTimer.getDeltaTime());
+			model->pos.y = grid->GetHeight(model->pos.x,model->pos.z) + 1.0f;
+		}
+		if (GetAsyncKeyState('S')){
+			model->MoveFacing(-10*mTimer.getDeltaTime());
+			model->pos.y = grid->GetHeight(model->pos.x,model->pos.z) + 1.0f;
+		}
+		if (GetAsyncKeyState('A')){
+			model->MoveStrafe(-10*mTimer.getDeltaTime());
+			model->pos.y = grid->GetHeight(model->pos.x,model->pos.z) + 1.0f;
+		}
+		if (GetAsyncKeyState('D')){
+			model->MoveStrafe(10*mTimer.getDeltaTime());
+			model->pos.y = grid->GetHeight(model->pos.x,model->pos.z) + 1.0f;
+		}
+		playerCamera->SetPosition(model->pos);
 	}
 
-	if (GetAsyncKeyState(VK_RIGHT)){
-		model->MoveStrafe(10*mTimer.getDeltaTime());
-		model->pos.y = grid->GetHeight(model->pos.x,model->pos.z) + 1.0f;
+	//enable or disable mouse input
+	if ((GetAsyncKeyState(VK_RETURN) & 0x8000)){
+		mouseInput = !mouseInput;
 	}
+	if (mouseInput)
+		MouseInput();
 
-	//camera->SetPosition(model->pos);
-	//camera->SetRotation(model->theta);
+	if ((GetAsyncKeyState(VK_SHIFT) & 0x8000)){
+		SwitchCameras();
+	}
 
 	if (GetAsyncKeyState('B')){
 		swapRasterizers();
 		Sleep(100);
 	}
+	
+}
+
+void MainApp::MouseInput(){
+	POINT mousePos; 
+	int mid_x = mClientWidth >> 1; //dividing by 2 in a fancy way
+	int mid_y = mClientHeight >> 1; //dividing by 2 in a fancy way
+
+	GetCursorPos(&mousePos);
+	SetCursorPos(mid_x, mid_y);
+
+	float yaw = (float)( (mid_x - mousePos.x) ) / 1000; 
+	float pitch = (float)( (mid_y - mousePos.y) ) / 1000;
+
+	if (currentCam == godCamera){
+		currentCam->MoveYawPitch(yaw,pitch);
+	}
+	else{
+		model->theta.y -= yaw;
+		currentCam->SetRotation(model->theta);
+		currentCam->MoveYawPitch(0.0f,pitch);
+	}
 }
 
 void MainApp::mouseScroll(int amount){
-	if (amount > 0)
-		camera->ModifyCamMovement(0.5f);
+	if (currentCam == godCamera){
+		if (amount > 0)
+			godCamera->ModifyCamMovement(0.5f);
+		else{
+			godCamera->ModifyCamMovement(-0.5f);
+		}	
+	}
 	else{
-		camera->ModifyCamMovement(-0.5f);
-	}	
+		if (amount > 0)
+			playerCamera->SetPivotPoint(playerCamera->GetPivotPoint() + Vector3f(0,0,0.3f));
+		else{
+			playerCamera->SetPivotPoint(playerCamera->GetPivotPoint() + Vector3f(0,0,-0.3f));
+		}		
+	}
 }
 
 void MainApp::onResize(){
@@ -322,20 +385,20 @@ void MainApp::drawScene(){
 	md3dDevice->OMSetBlendState(0, blendFactors, 0xffffffff);
 
 	// Generate the view matrix based on the camera's position.
-	camera->Render();
+	currentCam->Render();
 
 	// Get the world, view, and projection matrices from the camera and d3d objects.
-	camera->GetViewMatrix(mView);
+	currentCam->GetViewMatrix(mView);
 
 	//Render the Model
 	model->Render(mWVP);
-	texShader->RenderTexturing(md3dDevice,model->GetIndexCount(),model->objMatrix,mView,mProj,camera->GetPosition(),light[lightType],model->GetDiffuseTexture(),model->GetSpecularTexture());
+	texShader->RenderTexturing(md3dDevice,model->GetIndexCount(),model->objMatrix,mView,mProj,currentCam->GetPosition(),light[lightType],model->GetDiffuseTexture(),model->GetSpecularTexture());
 
 	/*model2->Render(mWVP);
 	texShader->RenderTexturing(md3dDevice,model2->GetIndexCount(),model2->objMatrix,mView,mProj,camera->GetPosition(),light[lightType],model2->GetDiffuseTexture(),model2->GetSpecularTexture());*/
 
 	grid->Render(mWVP);
-	multiTexShader->RenderMultiTexturing(md3dDevice,grid->GetIndexCount(),grid->objMatrix,mView,mProj,camera->GetPosition(),light[lightType],
+	multiTexShader->RenderMultiTexturing(md3dDevice,grid->GetIndexCount(),grid->objMatrix,mView,mProj,currentCam->GetPosition(),light[lightType],
 																															 grid->GetSpecularTexture(),
 																															 NULL,
 																															 grid->GetDiffuseMap(0),
@@ -370,8 +433,15 @@ void MainApp::animateLights(){
 		// The spotlight takes on the camera position and is aimed in the
 		// same direction the camera is looking. In this way, it looks
 		// like we are holding a flashlight.
-		light[2].pos = camera->GetPosition();
-		D3DXVec3Normalize(&light[2].dir, &(camera->GetLookAtTarget()-camera->GetPosition()));
+		light[2].pos = currentCam->GetPosition();
+		D3DXVec3Normalize(&light[2].dir, &(currentCam->GetLookAtTarget()-currentCam->GetPosition()));
 		break;
 	}	
+}
+
+void MainApp::SwitchCameras(){
+	if (currentCam == godCamera)
+		currentCam = playerCamera;
+	else
+		currentCam = godCamera;
 }

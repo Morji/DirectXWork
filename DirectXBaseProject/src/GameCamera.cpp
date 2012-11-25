@@ -1,8 +1,9 @@
 #include "GameCamera.h"
 
 
-GameCamera::GameCamera(void)
+GameCamera::GameCamera(bool willBeAttached)
 {
+	position = rotation = D3DXVECTOR3(0.0f,0.0f,0.0f);
 	right = D3DXVECTOR3(1.0f,0.0f,0.0f);
 	forward = D3DXVECTOR3(0.0f,0.0f,1.0f);
 	defaultRight = D3DXVECTOR3(1.0f,0.0f,0.0f);
@@ -11,37 +12,26 @@ GameCamera::GameCamera(void)
 	moveLeftRight = moveBackForward = yaw = pitch = yaw = 0.0f;
 	mouseLastPos.x = mouseLastPos.y = 0;
 	camMoveFactor = 15.0f;
-	attached = false;
+	attached = willBeAttached;
 }
 
 GameCamera::~GameCamera(void)
 {
 }
 
-void GameCamera::SetPivotPoint(D3DXVECTOR3 &pos,D3DXVECTOR3 &rotation){
-	this->position = position;
-	this->rotation = rotation;
-
-	attached = true;
+void GameCamera::SetPivotPoint(D3DXVECTOR3 &pos){
+	pivotPoint = pos;
 }
 
-void GameCamera::MouseMove(int wndWidth, int wndHeight){	
-	POINT mousePos; 
-	int mid_x = wndWidth >> 1; //dividing by 2 in a fancy way
-	int mid_y = wndHeight >> 1; //dividing by 2 in a fancy way
-	
-	GetCursorPos(&mousePos);	
-
-	SetCursorPos(mid_x, mid_y);
-
-	yaw -= (float)( (mid_x - mousePos.x) ) / 1000; 
-	pitch -= (float)( (mid_y - mousePos.y) ) / 1000;
+void GameCamera::MoveYawPitch(float yaw, float pitch){	
+	this->yaw -= yaw;
+	this->pitch -= pitch;
 }
 
 //The Render function uses the position and rotation of the camera to build and update the view matrix.
 void GameCamera::Render()
 {
-	D3DXMATRIX rotationMatrix;
+	D3DXMATRIX rotationMatrix;	 
 
 	// Setup the up vector.
 	up = D3DXVECTOR3(0,1,0);
@@ -49,7 +39,8 @@ void GameCamera::Render()
 	// Setup where the camera is looking by default.
 	lookAt = D3DXVECTOR3(0,0,1);
 
-	//yaw   = rotation.y;
+	if (attached)
+		yaw   = rotation.y;
 
 	// Create the rotation matrix from the yaw, pitch, and roll values.
 	D3DXMatrixRotationYawPitchRoll(&rotationMatrix, yaw, pitch, 0);
@@ -64,24 +55,34 @@ void GameCamera::Render()
 	D3DXVec3TransformNormal(&up, &up, &rotationMatrix);
 	D3DXVec3TransformNormal(&forward, &defaultForward, &rotationMatrix);
 
-	//if (!attached){
+	D3DXVECTOR3 camPos;
+
+	if (attached){
+		D3DXVECTOR3 pivot;
+		D3DXVec3TransformCoord(&pivot,&pivotPoint,&rotationMatrix);
+		camPos = position + pivot;
+	}
+	else{		
 		position += moveLeftRight*right;
 		position += moveBackForward*forward;
 		moveLeftRight = 0.0f;
 		moveBackForward = 0.0f;
-	//}
+		camPos = position;
+	}
 
 	// Translate the rotated camera position to the location of the viewer.
-	lookAt = position + lookAt;
+	lookAt = camPos + lookAt;
 
 	// Finally create the view matrix from the three updated vectors.
-	D3DXMatrixLookAtLH(&mViewMatrix, &position, &lookAt, &up);
+	D3DXMatrixLookAtLH(&mViewMatrix, &camPos, &lookAt, &up);
 }
 
 void GameCamera::ModifyCamMovement(float amount){
-	camMoveFactor += amount;
-	if (camMoveFactor < 0.0f){
-		camMoveFactor = 0.0f;
+	if (!attached){
+		camMoveFactor += amount;
+		if (camMoveFactor < 0.0f){
+			camMoveFactor = 0.0f;
+		}
 	}
 }
 
@@ -94,11 +95,11 @@ void GameCamera::SetRotation(float x, float y, float z){
 	rotation = D3DXVECTOR3(x,y,z);
 }
 
-void GameCamera::SetPosition(D3DXVECTOR3 position){
+void GameCamera::SetPosition(D3DXVECTOR3 &position){
 	this->position = position;
 }
 
-void GameCamera::SetRotation(D3DXVECTOR3 rotation){
+void GameCamera::SetRotation(D3DXVECTOR3 &rotation){
 	this->rotation = rotation;
 }
 
@@ -117,6 +118,10 @@ D3DXVECTOR3 GameCamera::GetRotation(){
 
 D3DXVECTOR3 GameCamera::GetLookAtTarget(){
 	return lookAt;
+}
+
+D3DXVECTOR3 GameCamera::GetPivotPoint(){
+	return pivotPoint;
 }
 
 void GameCamera::GetViewMatrix(D3DXMATRIX& viewMatrix)

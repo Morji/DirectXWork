@@ -3,40 +3,42 @@
 
 #include "d3dUtil.h"
 
-
-
 class GameCamera
 {
 public:
-	GameCamera(void);
+	GameCamera(bool willBeAttached = false);
+
 	~GameCamera(void);
 
 	void SetPosition(float x, float y, float z);
 	void SetRotation(float x, float y, float z);
 
-	void SetPosition(D3DXVECTOR3 position);
-	void SetRotation(D3DXVECTOR3 rotation);
+	void SetPosition(D3DXVECTOR3 &position);
+	void SetRotation(D3DXVECTOR3 &rotation);
 	void SetUp(D3DXVECTOR3 up);
-
-	void SetPivotPoint(D3DXVECTOR3 &position,D3DXVECTOR3 &rotation);
 
 	D3DXVECTOR3 GetPosition();
 	D3DXVECTOR3 GetLookAtTarget();
 	D3DXVECTOR3 GetRotation();
+	D3DXVECTOR3	GetPivotPoint();
 
 	void Render();
-	void MouseMove(int wndWidth, int wndHeight);
+	void MoveYawPitch(float yaw, float pitch);
 	void GetViewMatrix(D3DXMATRIX& viewMatrix);
 	void ModifyCamMovement(float amount);
+	void SetPivotPoint(D3DXVECTOR3 &pos);	//for a third person camera - decide the distance from the character
 
 	float moveLeftRight,moveBackForward;
 	float yaw, pitch, roll;
 	float camMoveFactor;
-private:
-	bool		attached;	//whether or not the camera is "attached" to an object
 
+private:	
 	D3DXVECTOR3 position;
 	D3DXVECTOR3 rotation;
+	bool		attached;
+
+	D3DXVECTOR3	pivotPoint;
+
 	D3DXVECTOR3 lookAt;
 	D3DXVECTOR3 up;
 	D3DXVECTOR3 right;
@@ -45,7 +47,7 @@ private:
 	D3DXVECTOR3 forward;
 	D3DXMATRIX mViewMatrix;
 
-	POINT mouseLastPos;
+	POINT		mouseLastPos;
 
 };
 
