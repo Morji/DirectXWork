@@ -8,6 +8,8 @@
 //
 //=============================================================================
 
+#define WIN32_LEAN_AND_MEAN
+
 #include "d3dApp.h"
 #include "GameObject.h"
 #include "CubeObject.h"
@@ -19,7 +21,10 @@
 #include "Grid.h"
 #include "ModelObject.h"
 #include "console.h"
+#include "Server.h"
 #include <list>
+
+using namespace std;
 
 class MainApp : public D3DApp
 {
@@ -40,6 +45,8 @@ public:
 	void updateScene(float dt);
 	void drawScene(); 
 	void mouseScroll(int amount);
+
+	LRESULT msgProc(UINT msg, WPARAM wParam, LPARAM lParam);
 	
 private:
 	void buildFX();
@@ -78,6 +85,19 @@ private:
 
 	bool			mouseInput;
 };
+
+LRESULT MainApp::msgProc(UINT msg, WPARAM wParam, LPARAM lParam){
+	D3DApp::msgProc(msg,wParam,lParam);
+	switch( msg ){
+	// Get network messages
+	case WM_SOCKET:
+		
+		break;
+	}
+
+	return DefWindowProc(mhMainWnd, msg, wParam, lParam);
+}
+
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 				   PSTR cmdLine, int showCmd)
@@ -205,7 +225,7 @@ void MainApp::initCameras(){
 	gameCameraList.push_back(playerCamera);
 
 	// make the current camera to be the god cam
-	currentCam = godCamera;
+	currentCam = playerCamera;
 }
 
 void MainApp::initModels(){

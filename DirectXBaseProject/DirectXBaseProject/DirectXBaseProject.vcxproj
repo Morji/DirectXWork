@@ -22,6 +22,7 @@
     <ClCompile Include="..\src\MainApp.cpp" />
     <ClCompile Include="..\src\ModelLoader.cpp" />
     <ClCompile Include="..\src\ModelObject.cpp" />
+    <ClCompile Include="..\src\Server.cpp" />
     <ClCompile Include="..\src\Shader.cpp" />
     <ClCompile Include="..\src\TerrainLoader.cpp" />
     <ClCompile Include="..\src\TexShader.cpp" />
@@ -40,6 +41,8 @@
     <ClInclude Include="..\src\LightShader.h" />
     <ClInclude Include="..\src\ModelLoader.h" />
     <ClInclude Include="..\src\ModelObject.h" />
+    <ClInclude Include="..\src\NetworkDefines.h" />
+    <ClInclude Include="..\src\Server.h" />
     <ClInclude Include="..\src\Shader.h" />
     <ClInclude Include="..\src\TerrainLoader.h" />
     <ClInclude Include="..\src\TexShader.h" />

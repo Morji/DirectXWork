@@ -37,6 +37,15 @@
     <Filter Include="Source Files\Terrain">
       <UniqueIdentifier>{a0e04816-af24-4ef6-a261-99febdf000ca}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Effect Files">
+      <UniqueIdentifier>{26184bb1-07f7-412d-982c-8680b15c5b7c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Networking">
+      <UniqueIdentifier>{6bd5ffe3-a331-41c4-a267-b23f90de0e9e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Networking">
+      <UniqueIdentifier>{e03d0b60-23dd-42ae-a72c-42e497692e24}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\d3dApp.cpp">
@@ -84,12 +93,12 @@
     <ClCompile Include="..\src\console.cpp">
       <Filter>Source Files\Utilities</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\Server.cpp">
+      <Filter>Source Files\Networking</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\d3dApp.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\Light.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\CubeObject.h">
@@ -140,13 +149,34 @@
     <ClInclude Include="..\src\console.h">
       <Filter>Header Files\Utilities</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\Light.h">
+      <Filter>Header Files\Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\NetworkDefines.h">
+      <Filter>Header Files\Networking</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\Server.h">
+      <Filter>Header Files\Networking</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="assets\lighting.fx" />
-    <None Include="assets\color.fx" />
-    <None Include="assets\color2.fx" />
-    <None Include="assets\lighthelper.fx" />
-    <None Include="assets\texture.fx" />
-    <None Include="assets\multitexture.fx" />
+    <None Include="assets\color.fx">
+      <Filter>Effect Files</Filter>
+    </None>
+    <None Include="assets\texture.fx">
+      <Filter>Effect Files</Filter>
+    </None>
+    <None Include="assets\color2.fx">
+      <Filter>Effect Files</Filter>
+    </None>
+    <None Include="assets\lighthelper.fx">
+      <Filter>Effect Files</Filter>
+    </None>
+    <None Include="assets\lighting.fx">
+      <Filter>Effect Files</Filter>
+    </None>
+    <None Include="assets\multitexture.fx">
+      <Filter>Effect Files</Filter>
+    </None>
   </ItemGroup>
 </Project>
