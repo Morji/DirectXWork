@@ -289,6 +289,10 @@ int GameObject::GetIndexCount(){
 	return mIndexCount;
 }
 
+D3DXMATRIX &GameObject::GetTexMatrix(){
+	return mTexMatrix;
+}
+
 ID3D10ShaderResourceView* GameObject::GetDiffuseTexture(){
 	return diffuseMap->GetTexture();
 }

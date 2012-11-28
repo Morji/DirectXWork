@@ -38,9 +38,7 @@ public:
 	void processInput();
 
 	void initApp();
-	void initCameras();
-	void initModels();
-	void initShaders();
+
 	void onResize();
 	void updateScene(float dt);
 	void drawScene(); 
@@ -49,13 +47,20 @@ public:
 	LRESULT msgProc(UINT msg, WPARAM wParam, LPARAM lParam);
 	
 private:
-	void buildFX();
-	void buildVertexLayouts();
+	void buildTransparentBS();
 	void animateLights();
 	void SwitchCameras();
 	void MouseInput();
+	void initCameras();
+	void initModels();
+	void initGrids();
+	void initShaders();
+
+	void drawGrids();
+	void drawModels();
  
 private:
+	ID3D10BlendState*		transparentBS;
 
 	std::list<Shader*>		shaderList;
 	std::list<GameObject*>	gameObjectList;
@@ -65,8 +70,9 @@ private:
 	LIGHT_TYPE		lightType; // 0 (parallel), 1 (point), 2 (spot)
 
 	ModelObject		*model;
-	//ModelObject	*model2;
-	Grid			*grid;
+	
+	Grid			*water;
+	Grid			*terrain;
 
 	GameCamera		*godCamera;
 	GameCamera		*playerCamera;
@@ -157,7 +163,7 @@ MainApp::MainApp(HINSTANCE hInstance)
 
 	//initialize variables to null
 	model = NULL;
-	grid = NULL;
+	terrain = NULL;
 	lightShader = NULL;	
 	texShader = NULL;
 	colorShader = NULL;
@@ -203,11 +209,28 @@ MainApp::~MainApp(){
 	gameCameraList.clear();
 }
 
+void MainApp::buildTransparentBS(){
+	D3D10_BLEND_DESC blendDesc = {0};
+	blendDesc.AlphaToCoverageEnable = false;
+	blendDesc.BlendEnable[0] = true;
+	blendDesc.SrcBlend = D3D10_BLEND_SRC_ALPHA;
+	blendDesc.DestBlend = D3D10_BLEND_INV_SRC_ALPHA;
+	blendDesc.BlendOp = D3D10_BLEND_OP_ADD;
+	blendDesc.SrcBlendAlpha = D3D10_BLEND_ONE;
+	blendDesc.DestBlendAlpha = D3D10_BLEND_ZERO;
+	blendDesc.BlendOpAlpha = D3D10_BLEND_OP_ADD;
+	blendDesc.RenderTargetWriteMask[0] = D3D10_COLOR_WRITE_ENABLE_ALL;
+
+	HR(md3dDevice->CreateBlendState(&blendDesc, &transparentBS));
+}
+
 void MainApp::initApp(){
-	D3DApp::initApp();		
+	D3DApp::initApp();	
+	buildTransparentBS();
 
 	initCameras();
 	initModels();
+	initGrids();
 	initShaders();	
 }
 
@@ -232,18 +255,6 @@ void MainApp::initModels(){
 	bool result;
 
 	model = new ModelObject();
-	grid = new Grid();
-	result = grid->InitializeWithMultiTexture(md3dDevice,L"assets/defaultspec.dds", NULL,L"assets/stone2.dds",
-																						 L"assets/ground0.dds",
-																						 L"assets/grass0.dds");
-	if(!result){
-		MessageBox(getMainWnd(), L"Could not initialize the grid object.", L"Error", MB_OK);
-	}
-	result = grid->GenerateGridFromTGA("assets/heightmap.tga");
-	if(!result){
-		MessageBox(getMainWnd(), L"Could properly generate heightmap.", L"Error", MB_OK);
-	}
-	gameObjectList.push_back(grid);
 
 	result = model->InitializeWithTexture(md3dDevice,L"assets/models/Grunt/grunt_texture.jpg",NULL);
 
@@ -260,6 +271,37 @@ void MainApp::initModels(){
 	/*model2 = new ModelObject(*model);
 	model2->pos = Vector3f(8,7,0);
 	gameObjectList.push_back(model2);*/
+}
+
+void MainApp::initGrids(){
+	//initialize the terrain
+	bool result;
+
+	terrain = new Grid();
+	result = terrain->InitializeWithMultiTexture(md3dDevice,L"assets/defaultspec.dds", NULL,L"assets/stone2.dds",
+																						 L"assets/ground0.dds",
+																						 L"assets/grass0.dds");
+	if(!result){
+		MessageBox(getMainWnd(), L"Could not initialize the terrain object.", L"Error", MB_OK);
+	}
+	result = terrain->GenerateGridFromTGA("assets/heightmap.tga");
+	if(!result){
+		MessageBox(getMainWnd(), L"Could properly generate heightmap.", L"Error", MB_OK);
+	}
+	gameObjectList.push_back(terrain);
+
+	//initialize the water
+	water = new Grid();
+	result = water->InitializeWithTexture(md3dDevice,L"assets/water.jpg",L"assets/waterAlpha.png");
+	if(!result){
+		MessageBox(getMainWnd(), L"Could not initialize the water object.", L"Error", MB_OK);
+	}
+	result = water->GenerateGrid(512,512,8);
+	if(!result){
+		MessageBox(getMainWnd(), L"Could properly generate heightmap.", L"Error", MB_OK);
+	}
+	water->pos = Vector3f(0,1.1f,0);
+	gameObjectList.push_back(water);
 }
 
 void MainApp::initShaders(){
@@ -308,19 +350,19 @@ void MainApp::processInput(){
 	else{
 		if (GetAsyncKeyState('W')){
 			model->MoveFacing(10*mTimer.getDeltaTime());
-			model->pos.y = grid->GetHeight(model->pos.x,model->pos.z) + 1.0f;
+			model->pos.y = terrain->GetHeight(model->pos.x,model->pos.z) + 1.0f;
 		}
 		if (GetAsyncKeyState('S')){
 			model->MoveFacing(-10*mTimer.getDeltaTime());
-			model->pos.y = grid->GetHeight(model->pos.x,model->pos.z) + 1.0f;
+			model->pos.y = terrain->GetHeight(model->pos.x,model->pos.z) + 1.0f;
 		}
 		if (GetAsyncKeyState('A')){
 			model->MoveStrafe(-10*mTimer.getDeltaTime());
-			model->pos.y = grid->GetHeight(model->pos.x,model->pos.z) + 1.0f;
+			model->pos.y = terrain->GetHeight(model->pos.x,model->pos.z) + 1.0f;
 		}
 		if (GetAsyncKeyState('D')){
 			model->MoveStrafe(10*mTimer.getDeltaTime());
-			model->pos.y = grid->GetHeight(model->pos.x,model->pos.z) + 1.0f;
+			model->pos.y = terrain->GetHeight(model->pos.x,model->pos.z) + 1.0f;
 		}
 		playerCamera->SetPosition(model->pos);
 	}
@@ -398,6 +440,7 @@ void MainApp::onResize(){
 void MainApp::updateScene(float dt){
 	D3DApp::updateScene(dt);
 	animateLights();
+	water->AnimateUV(dt);
 }
 
 void MainApp::drawScene(){
@@ -416,31 +459,47 @@ void MainApp::drawScene(){
 
 	// Get the world, view, and projection matrices from the camera and d3d objects.
 	currentCam->GetViewMatrix(mView);
+	
+	drawModels();	
 
-	//Render the Model
-	model->Render(mWVP);
-	texShader->RenderTexturing(md3dDevice,model->GetIndexCount(),model->objMatrix,mView,mProj,currentCam->GetPosition(),light[lightType],model->GetDiffuseTexture(),model->GetSpecularTexture());
-
-	/*model2->Render(mWVP);
-	texShader->RenderTexturing(md3dDevice,model2->GetIndexCount(),model2->objMatrix,mView,mProj,camera->GetPosition(),light[lightType],model2->GetDiffuseTexture(),model2->GetSpecularTexture());*/
-
-	grid->Render(mWVP);
-	multiTexShader->RenderMultiTexturing(md3dDevice,grid->GetIndexCount(),grid->objMatrix,mView,mProj,currentCam->GetPosition(),light[lightType],
-																															 grid->GetSpecularTexture(),
-																															 NULL,
-																															 grid->GetDiffuseMap(0),
-																															 grid->GetDiffuseMap(1),
-																															 grid->GetDiffuseMap(2),
-																															 grid->GetMaxHeight(),
-																															 lightType);
-
-
+	drawGrids();
+	
 	// We specify DT_NOCLIP, so we do not care about width/height of the rect.
 	RECT R = {5, 5, 0, 0};
 	md3dDevice->RSSetState(0);
 	mFont->DrawText(0, mFrameStats.c_str(), -1, &R, DT_NOCLIP, BLACK);
 
 	mSwapChain->Present(0, 0);
+}
+
+void MainApp::drawGrids(){
+	//draw the terrain
+	terrain->Render(mWVP);
+	multiTexShader->RenderMultiTexturing(md3dDevice,terrain->GetIndexCount(),terrain->objMatrix,mView,mProj,currentCam->GetPosition(),light[lightType],
+																															 terrain->GetSpecularTexture(),
+																															 NULL,
+																															 terrain->GetDiffuseMap(0),
+																															 terrain->GetDiffuseMap(1),
+																															 terrain->GetDiffuseMap(2),
+																															 terrain->GetMaxHeight(),
+																															 lightType);
+	//get some blending going on
+	float blendFactors[] = {0.0f, 0.0f, 0.0f, 0.0f};
+	md3dDevice->OMSetBlendState(transparentBS, blendFactors, 0xffffffff);
+	//draw the water
+	water->Render(mWVP);
+	texShader->RenderTexturing(md3dDevice,water->GetIndexCount(),water->objMatrix,mView,mProj, water->GetTexMatrix(), currentCam->GetPosition(), light[lightType],water->GetDiffuseTexture(),water->GetSpecularTexture());
+
+}
+
+void MainApp::drawModels(){
+	//Render the Model
+	model->Render(mWVP);
+	texShader->RenderTexturing(md3dDevice,model->GetIndexCount(),model->objMatrix,mView,mProj, model->GetTexMatrix(),currentCam->GetPosition(),light[lightType],model->GetDiffuseTexture(),model->GetSpecularTexture());
+
+	/*model2->Render(mWVP);
+	texShader->RenderTexturing(md3dDevice,model2->GetIndexCount(),model2->objMatrix,mView,mProj,camera->GetPosition(),light[lightType],model2->GetDiffuseTexture(),model2->GetSpecularTexture());*/
+
 }
 
 void MainApp::animateLights(){
@@ -455,7 +514,7 @@ void MainApp::animateLights(){
 		// staying 7 units above the land's or water's surface.
 		light[1].pos.x = 50.0f*cosf( mTimer.getGameTime() );
 		light[1].pos.z = 50.0f*sinf( mTimer.getGameTime() );
-		light[1].pos.y = Max(grid->GetHeight(light[1].pos.x, light[1].pos.z), 0.0f) + 7.0f;
+		light[1].pos.y = Max(terrain->GetHeight(light[1].pos.x, light[1].pos.z), 0.0f) + 7.0f;
 		break;
 	case L_SPOT:
 		// The spotlight takes on the camera position and is aimed in the

@@ -35,6 +35,7 @@ bool TexShader::Initialize(ID3D10Device* device, HWND hwnd, TEXTURETYPE texType)
 void TexShader::RenderTexturing(ID3D10Device* device, int indexCount, D3DXMATRIX worldMatrix, 
 													  D3DXMATRIX viewMatrix, 
 													  D3DXMATRIX projectionMatrix,
+													  D3DXMATRIX textureMatrix,
 													  D3DXVECTOR3 mEyePos, 
 													  Light lightVar,
 													  ID3D10ShaderResourceView *diffuseMap,
@@ -42,7 +43,7 @@ void TexShader::RenderTexturing(ID3D10Device* device, int indexCount, D3DXMATRIX
 {
 
 	// Set the shader parameters that it will use for rendering.
-	SetShaderParametersTexturing(indexCount, worldMatrix, viewMatrix, projectionMatrix, mEyePos, lightVar, diffuseMap, specularMap);
+	SetShaderParametersTexturing(indexCount, worldMatrix, viewMatrix, projectionMatrix, textureMatrix, mEyePos, lightVar, diffuseMap, specularMap);
 
 	// Now render the prepared buffers with the shader.
 	RenderShader(device, indexCount);
@@ -73,6 +74,7 @@ void TexShader::SetShaderParametersTexturing(int indexCount,
 									D3DXMATRIX worldMatrix, 
 									D3DXMATRIX viewMatrix, 
 									D3DXMATRIX projectionMatrix,
+									D3DXMATRIX textureMatrix,
 									D3DXVECTOR3 mEyePos, 
 									Light lightVar,
 									ID3D10ShaderResourceView *diffuseMap,
@@ -92,6 +94,8 @@ void TexShader::SetShaderParametersTexturing(int indexCount,
 
 	// Set the specular map shader var
 	mSpecularMap->SetResource(specularMap);
+
+	mTexMatrix->SetMatrix((float*)&textureMatrix);
 }
 
 void TexShader::SetShaderParametersMultiTexturing(int indexCount, 
@@ -218,6 +222,7 @@ bool TexShader::InitializeShader(ID3D10Device* device, HWND hwnd, WCHAR* filenam
 	mWorldMatrix =	mEffect->GetVariableByName("worldMatrix")->AsMatrix();
 	mViewMatrix =	mEffect->GetVariableByName("viewMatrix")->AsMatrix();
 	mProjectionMatrix = mEffect->GetVariableByName("projectionMatrix")->AsMatrix();
+	mTexMatrix = mEffect->GetVariableByName("texMatrix")->AsMatrix();
 
 	mEyePosVar		= mEffect->GetVariableByName("gEyePosW");
 

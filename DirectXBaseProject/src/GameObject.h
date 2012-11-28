@@ -29,6 +29,7 @@ public:
 	{
 		diffuseMap = specularMap = blendMap = 0;
 		for (int i = 0; i < 3; i++) diffuseMapRV[i] = 0;
+		D3DXMatrixIdentity(&mTexMatrix);
 	}
 	virtual ~GameObject()
 	{
@@ -53,6 +54,8 @@ public:
 	ID3D10ShaderResourceView* GetSpecularTexture();
 	ID3D10ShaderResourceView* GetBlendTexture();
 	ID3D10ShaderResourceView* GetDiffuseMap(int rvWhich);
+	
+	D3DXMATRIX				  &GetTexMatrix();
 
 	int						  GetIndexCount();
 	///////////////////////////////////////////////
@@ -72,6 +75,8 @@ protected:
 	DWORD mVertexCount;
 	DWORD mIndexCount;
 	DWORD mNumFaces;
+
+	D3DXMATRIX mTexMatrix;
 
 	ID3D10Device* md3dDevice;
 	ID3D10Buffer* mVB;

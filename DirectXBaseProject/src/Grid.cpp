@@ -7,6 +7,7 @@ Grid::Grid(void)
 	heightData = nullptr;
 	vertices = nullptr;
 	indices = nullptr;
+	texOffset = Vector2f(0,0);
 }
 
 
@@ -93,39 +94,32 @@ bool Grid::GenerateGridFromTGA(char* filename){
 	return true;
 }
 
-///Generate a grid by an arbitrary function GetHeight
-bool Grid::GenerateGrid(int width, int depth)const{
-/*
-	mVertexCount = (width*depth);
-	vertices = new VertexC[mVertexCount];
+///Generate a a flat grid given it's size and also how often to repeat(tile) the texture
+bool Grid::GenerateGrid(int width, int depth,const int texRepeat){
+
+	gridWidth = width;
+	gridDepth = depth;
+
+	mVertexCount = (gridWidth*gridDepth);
+	vertices = new VertexNT[mVertexCount];
 
 	float dx = CELLSPACING;
 	float halfWidth = (width-1)*dx*0.5f;
-	float halfDepth = (depth-1)*dx*0.5f;
+	float halfDepth = (depth-1)*dx*0.5f;	
 
 	for(DWORD i = 0; i < width; ++i){
 		float z = halfDepth - i*dx;
 
 		for(DWORD j = 0; j < depth; ++j){
 			float x = -halfWidth + j*dx;
-			// Graph of this function looks like a mountain range.
-			float y = GetHeight(x,z);
-			//float y = 0.0f;
+			float y = 0.0f;
 			vertices[i*depth+j].pos = D3DXVECTOR3(x, y, z);
-			// Color the vertex based on its height.
-			if( y < -10.0f )
-				vertices[i*depth+j].color = BEACH_SAND;
-			else if( y < 5.0f )
-				vertices[i*depth+j].color = LIGHT_YELLOW_GREEN;
-			else if( y < 12.0f )
-				vertices[i*depth+j].color = DARK_YELLOW_GREEN;
-			else if( y < 20.0f )
-				vertices[i*depth+j].color = DARKBROWN;
-			else
-				vertices[i*depth+j].color = WHITE;
+			vertices[i*depth+j].normal = D3DXVECTOR3(0,1,0);
 		}
 	}
 	
+	ComputeTextureCoords(texRepeat);
+
 	// Iterate over each quad and compute indices.
 	mIndexCount = ((width-1)*(depth-1)*6);
 	indices = new DWORD[mIndexCount];
@@ -145,7 +139,7 @@ bool Grid::GenerateGrid(int width, int depth)const{
 
 	//initialize the buffers with the index and vertex data
 	if (!InitializeBuffers(indices, vertices))
-		return false;*/
+		return false;
 
 	return true;
 }
@@ -203,15 +197,15 @@ void Grid::ComputeNormals()const{
 	}
 }
 
-void Grid::ComputeTextureCoords()const{
+void Grid::ComputeTextureCoords(const int repeatAmount)const{
 
 	float incrementValue;
 
 	// Calculate how much to increment the texture coordinates by.
-	incrementValue = (float)TEXTURE_REPEAT / (float)gridDepth;
+	incrementValue = (float)repeatAmount / (float)gridDepth;
 
-	float widthRepeat = (float)(gridWidth/TEXTURE_REPEAT);
-	float depthRepeat = (float)(gridDepth/TEXTURE_REPEAT);
+	float widthRepeat = (float)(gridWidth/repeatAmount);
+	float depthRepeat = (float)(gridDepth/repeatAmount);
 
 	// Loop through the entire height map and calculate the tu and tv texture coordinates for each vertex.
 	for(int i=0; i<gridWidth; i++){
@@ -265,6 +259,22 @@ bool Grid::InitializeBuffers(DWORD* indices,  VertexNT* vertices){
 	return true;	
 }
 
+void Grid::AnimateUV(float dt){
+	// Animate water texture as a function of time in the update function.
+	texOffset.y += 0.1f*dt;
+	texOffset.x = 0.25f*sinf(4.0f*texOffset.y);
+
+	// Scale texture coordinates by 5 units to map [0,1]-->[0,5]
+	// so that the texture repeats five times in each direction.
+	D3DXMATRIX S;
+	D3DXMatrixScaling(&S, 5.0f, 5.0f, 1.0f);
+	// Translate the texture.
+	D3DXMATRIX T;
+	D3DXMatrixTranslation(&T, texOffset.x, texOffset.y, 0.0f);
+	// Scale and translate the texture.
+	mTexMatrix = S*T;
+}
+
 float Grid::GetMaxHeight(){
 	return maxHeight;
 }
@@ -273,6 +283,12 @@ float Grid::GetHeight(float x, float z){
 	// Transform from terrain local space to “cell” space.
 	float c = (x + 0.5f*gridWidth) / CELLSPACING;
 	float d = (z - 0.5f*gridDepth) / -CELLSPACING;
+
+	//check if point is within the grid
+	if (c < 0 || c > gridWidth || d < 0 || d > gridDepth){
+		return 0.0f;
+	}
+
 	// Get the row and column we are in.
 	int row = (int)floorf(d);//z
 	int col = (int)floorf(c);//x

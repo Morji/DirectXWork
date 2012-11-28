@@ -19,7 +19,8 @@ public:
 													  D3DXMATRIX worldMatrix, 
 													  D3DXMATRIX viewMatrix, 
 													  D3DXMATRIX projectionMatrix,
-													  D3DXVECTOR3 mEyePos, 
+													  D3DXMATRIX textureMatrix,
+													  D3DXVECTOR3 mEyePos, 													  
 													  Light lightVar,
 													  ID3D10ShaderResourceView *diffuseMap,
 													  ID3D10ShaderResourceView *specularMap);
@@ -44,6 +45,8 @@ private:
 	ID3D10EffectVariable*		mLightVar;
 	ID3D10EffectScalarVariable*	mLightType;
 
+	ID3D10EffectMatrixVariable* mTexMatrix;
+
 	ID3D10EffectScalarVariable*			mHeights[3];				//for height-mapped multi texturing
 	ID3D10EffectShaderResourceVariable* mDiffuseMap;			//for regular texturing
 	ID3D10EffectShaderResourceVariable* mSpecularMap;			//for regular and mutli texturing
@@ -55,6 +58,7 @@ private:
 							D3DXMATRIX worldMatrix, 
 							D3DXMATRIX viewMatrix, 
 							D3DXMATRIX projectionMatrix,
+							D3DXMATRIX textureMatrix,
 							D3DXVECTOR3 mEyePos, 
 							Light lightVar,
 							ID3D10ShaderResourceView *diffuseMap,

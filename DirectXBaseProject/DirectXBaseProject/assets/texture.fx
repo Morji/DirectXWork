@@ -16,6 +16,8 @@ cbuffer cbPerObject{
 	float4x4	viewMatrix;
 	float4x4	projectionMatrix;
 	float4x4	wvpMatrix;
+
+	float4x4	texMatrix;
 	
 };
 // Nonnumeric values cannot be added to a cbuffer.
@@ -44,7 +46,8 @@ struct PixelInputType{
     float4 position		: SV_POSITION;
 	float3 positionW	: POSITION;
 	float4 normal		: NORMAL;
-    float2 tex			: TEXCOORD0;//for regular texturing
+    float2 tex			: TEXCOORD0;
+	float2 tex1			: TEXCOORD1;//for alpha blending
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -59,7 +62,10 @@ PixelInputType TextureVertexShader(VertexInputType input){
 
 	// Store the texture coordinates for the pixel shader.
 	output.positionW = mul(float4(input.position, 1.0f), wvpMatrix);
-	output.tex = input.tex;
+
+	// In shader program
+	output.tex1 = input.tex;
+	output.tex = mul(float4(input.tex, 0.0f, 1.0f), texMatrix);
     
     return output;
 }
@@ -78,6 +84,8 @@ float4 TexturePixelShader(PixelInputType input) : SV_Target
 	// Map [0,1] --> [0,256]
 	spec.a *= 256.0f;
 
+	float alpha = gDiffuseMap.Sample( SampleType, input.tex1 ).r;
+
 	// Get materials from texture maps.
 	float4 diffuse = gDiffuseMap.Sample( SampleType, input.tex );	
     
@@ -85,7 +93,7 @@ float4 TexturePixelShader(PixelInputType input) : SV_Target
 	SurfaceInfo v = {input.positionW, normalW, diffuse, spec};
 	float3 litColor = ParallelLight(v, gLight, gEyePosW);
 
-	return float4(litColor, diffuse.a);	
+	return float4(litColor, alpha);	
 }
 
 ////////////////////////////////////////////////////////////////////////////////
