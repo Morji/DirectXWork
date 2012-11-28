@@ -325,6 +325,13 @@ void MainApp::processInput(){
 		playerCamera->SetPosition(model->pos);
 	}
 
+	if (GetAsyncKeyState(VK_UP)){
+		light[0].dir += Vector3f(0,0,0.005f);
+	}
+	if (GetAsyncKeyState(VK_DOWN)){
+		light[0].dir += Vector3f(0,0,-0.005f);
+	}
+
 	//enable or disable mouse input
 	if ((GetAsyncKeyState(VK_RETURN) & 0x8000)){
 		mouseInput = !mouseInput;
@@ -432,6 +439,7 @@ void MainApp::drawScene(){
 	RECT R = {5, 5, 0, 0};
 	md3dDevice->RSSetState(0);
 	mFont->DrawText(0, mFrameStats.c_str(), -1, &R, DT_NOCLIP, BLACK);
+
 	mSwapChain->Present(0, 0);
 }
 
