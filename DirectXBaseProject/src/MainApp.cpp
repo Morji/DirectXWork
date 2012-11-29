@@ -90,6 +90,10 @@ private:
 	D3DXMATRIX mWVP;
 
 	bool			mouseInput;
+
+//server stuff
+private:
+	Server			*server;
 };
 
 LRESULT MainApp::msgProc(UINT msg, WPARAM wParam, LPARAM lParam){
@@ -97,7 +101,7 @@ LRESULT MainApp::msgProc(UINT msg, WPARAM wParam, LPARAM lParam){
 	switch( msg ){
 	// Get network messages
 	case WM_SOCKET:
-		
+		server->ProcessMessage(wParam, lParam);
 		break;
 	}
 
@@ -207,6 +211,11 @@ MainApp::~MainApp(){
 		gameCameraList.pop_back();
 	}
 	gameCameraList.clear();
+
+	if (server){
+		delete server;
+		server = nullptr;
+	}
 }
 
 void MainApp::buildTransparentBS(){
@@ -232,6 +241,11 @@ void MainApp::initApp(){
 	initModels();
 	initGrids();
 	initShaders();	
+
+	server = new Server();
+	if (!server->StartServer()){
+		cout << "Server Failed to start" << endl;
+	}
 }
 
 void MainApp::initCameras(){
@@ -438,9 +452,11 @@ void MainApp::onResize(){
 }
 
 void MainApp::updateScene(float dt){
+	server->Update(dt);
 	D3DApp::updateScene(dt);
 	animateLights();
 	water->AnimateUV(dt);
+	
 }
 
 void MainApp::drawScene(){

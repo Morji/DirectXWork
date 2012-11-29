@@ -1,43 +1,133 @@
 #include "Server.h"
 
 Server::Server(){
-	
+	socket = new CUDPSocket();
+	serverPacketNum = 0;
+	numConnections = 0;
+	millis = 0;
 }
 
 Server::~Server(){
-	closesocket(connSocket);
+	if (socket){
+		delete socket;
+		socket = nullptr;
+	}
+	if (serverPacket){
+		delete serverPacket;
+		serverPacket = nullptr;
+	}
 	WSACleanup();
 }
 
 bool Server::StartServer(){
-	if (!StartWinSock())
+
+	serverPacket = new ServerPacket(numConnections);
+
+	cout << "Starting server" << endl;
+	if (!socket->Initialise()){
+		cout << "Server failed to start" << endl;
 		return false;
-
-	std::cout << "WinSock Started \n";
-	connSocket = socket(AF_INET,SOCK_DGRAM,0); // create socket
-
-	me.sin_family = AF_INET;
-	me.sin_port = htons (SERVERPORT);
-	me.sin_addr.s_addr = htonl (INADDR_ANY);
-
-	printf("The IP address being connected to is: ");
+	}
 
 	return true;
 }
 
-bool Server::StartWinSock(){
-	// Startup Winsock
-	WSADATA w;
-	int error = WSAStartup (0x0202,&w);
-	if (error){
-		printf("Error:  You need WinSock 2.2!\n");
-		return false;
+void Server::AddClient(sockaddr_in &address,Vector3f &pos){
+	//add client to vector of client info
+	ClientInfo info;
+	info.clientAddress = address;
+	info.clientPos = pos;
+	
+	clientVector.push_back(info);
+}
+
+void Server::UpdateClient(sockaddr_in &address,Vector3f &pos){
+	for (int i = 0; i < numConnections; i++){
+		if (clientVector.at(i).clientAddress.sin_addr.S_un.S_addr == address.sin_addr.S_un.S_addr){
+			clientVector.at(i).clientPos = pos;
+			cout << "Updating client pos to: " << pos.x << ", " << pos.y << "," << pos.z;
+			return;
+		}
 	}
-	if (w.wVersion!=0x0202){
-		printf("Error:  Wrong WinSock version!\n");
-		WSACleanup ();
-		return false;
+}
+
+//Send all client info to every client
+void Server::UpdateServer(){
+
+	//only create a new version of the server packet if the client size has changed
+	if (numConnections != serverPacket->GetClientSize()){
+		delete serverPacket;
+		serverPacket = nullptr;
+		serverPacket = new ServerPacket(numConnections);
+	}
+	
+	serverPacket->ID = ++serverPacketNum;
+
+	// place the position data in the packet
+	for (int i = 0; i < numConnections; i++){
+		serverPacket->positionData[i] = clientVector.at(i).clientPos;
 	}
 
-	return true;
+	memset(packetBuffer, 0x0, BUFFERSIZE);//clear the buffer
+	memcpy(serverPacket, packetBuffer , sizeof(ServerPacket));
+
+	// send the server packet to all players
+	for (int i = 0; i < numConnections; i++){
+		//send update info of all players to client	
+		socket->SendTo(packetBuffer,clientVector.at(i).clientAddress);				
+	}
+}
+
+//Updates the server every update period
+void Server::Update(float dt){
+	millis+= dt;
+	if (millis >= SERVER_UPDATE_PERIOD){
+		UpdateServer();
+		millis = 0.0f;
+	}
+}
+
+// Processes any pending network messages
+void Server::ProcessMessage(WPARAM msg, LPARAM lParam){
+	if (WSAGETSELECTERROR(lParam)){
+		cout << "Socket error\n";
+	}
+
+	switch (WSAGETSELECTEVENT(lParam)){
+
+		case FD_READ:{
+			
+			int bytes = socket->Receive(msgBuffer);
+			//check for any errors on the socket
+			if(bytes == SOCKET_ERROR){
+				int SocketError = WSAGetLastError();
+				printf("Socket servicing client %d has error:%d\n", msg, SocketError);
+				numConnections--;			    // decrement number of current connections
+			}
+			// We have received data so process it			
+			if(bytes > 0){
+				sockaddr_in clientAddress = socket->GetDestinationAddress();
+				cout << "Received data from " << inet_ntoa(clientAddress.sin_addr);				
+				memcpy(&recvPacket, msgBuffer, sizeof(recvPacket));
+				//if a new client has connected - add him
+				if (!ClientExists(clientAddress)){
+					cout << "New client connected! " << endl;
+					numConnections++;
+					AddClient(clientAddress,recvPacket.position);
+				}
+				//else if a connected client is sending updates - update him
+				else{
+					UpdateClient(clientAddress,recvPacket.position);
+				}
+			}
+			break;}
+	}
+}
+
+bool Server::ClientExists(sockaddr_in &address){
+	for (int i = 0; i < numConnections; i++){
+		if (clientVector.at(i).clientAddress.sin_addr.S_un.S_addr == address.sin_addr.S_un.S_addr)
+			return true;
+	}
+	return false;
 }

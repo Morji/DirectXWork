@@ -18,6 +18,7 @@
     <ClCompile Include="..\src\GameObject.cpp" />
     <ClCompile Include="..\src\GameTimer.cpp" />
     <ClCompile Include="..\src\Grid.cpp" />
+    <ClCompile Include="..\src\hsfsocket.cpp" />
     <ClCompile Include="..\src\LightShader.cpp" />
     <ClCompile Include="..\src\MainApp.cpp" />
     <ClCompile Include="..\src\ModelLoader.cpp" />
@@ -37,6 +38,7 @@
     <ClInclude Include="..\src\GameObject.h" />
     <ClInclude Include="..\src\GameTimer.h" />
     <ClInclude Include="..\src\Grid.h" />
+    <ClInclude Include="..\src\hsfsocket.h" />
     <ClInclude Include="..\src\Light.h" />
     <ClInclude Include="..\src\LightShader.h" />
     <ClInclude Include="..\src\ModelLoader.h" />

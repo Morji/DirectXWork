@@ -96,6 +96,9 @@
     <ClCompile Include="..\src\Server.cpp">
       <Filter>Source Files\Networking</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\hsfsocket.cpp">
+      <Filter>Source Files\Networking</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\d3dApp.h">
@@ -156,6 +159,9 @@
       <Filter>Header Files\Networking</Filter>
     </ClInclude>
     <ClInclude Include="..\src\Server.h">
+      <Filter>Header Files\Networking</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\hsfsocket.h">
       <Filter>Header Files\Networking</Filter>
     </ClInclude>
   </ItemGroup>

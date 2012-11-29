@@ -2,11 +2,7 @@
 #define NETWORKDEFINES_H
 
 #include <iostream>
-#include <winsock2.h>
-#include <windows.h>
 #include "Vertex.h"
-
-#pragma comment(lib, "ws2_32.lib")
 
 // the ip address of the server to connect to
 #define SERVERIP "127.0.0.1"
@@ -18,7 +14,6 @@
 
 #define BUFFERSIZE		(100)
 #define MSG_CONNECTED	(0x41)	//A
-#define TEXTSIZE		(80)
 #define NUMCONN			(4)
 
 struct Packet{
@@ -28,6 +23,24 @@ struct Packet{
 	Packet(){
 		ID = 0;
 		position = Vector3f(0,0,0);
+	}
+};
+
+struct ServerPacket{
+	int			ID;
+	Vector3f	*positionData;
+
+	ServerPacket(int clientSize){
+		positionData = new Vector3f[clientSize];
+	}
+
+	~ServerPacket(){
+		delete [] positionData;
+		positionData = nullptr;
+	}
+
+	int	GetClientSize(){
+		return sizeof(positionData)/sizeof(positionData[0]);
 	}
 };
 
