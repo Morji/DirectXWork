@@ -19,7 +19,7 @@ Server::~Server(){
 	WSACleanup();
 }
 
-bool Server::StartServer(){
+bool Server::StartServer(HWND hwnd){
 
 	serverPacket = new ServerPacket(numConnections);
 
@@ -28,6 +28,15 @@ bool Server::StartServer(){
 		cout << "Server failed to start" << endl;
 		return false;
 	}
+
+	if (!socket->Bind(SERVERPORT)){
+		cout << "Server failed to start" << endl;
+		return false;
+	}
+
+	WSAAsyncSelect (socket->GetSocket(),hwnd,WM_SOCKET,( FD_READ ));
+
+	cout << "Server startup message: " << WSAGetLastError() << endl;
 
 	return true;
 }
@@ -45,7 +54,7 @@ void Server::UpdateClient(sockaddr_in &address,Vector3f &pos){
 	for (int i = 0; i < numConnections; i++){
 		if (clientVector.at(i).clientAddress.sin_addr.S_un.S_addr == address.sin_addr.S_un.S_addr){
 			clientVector.at(i).clientPos = pos;
-			cout << "Updating client pos to: " << pos.x << ", " << pos.y << "," << pos.z;
+			cout << "Updating client pos to: " << pos.x << ", " << pos.y << "," << pos.z << endl;
 			return;
 		}
 	}
@@ -69,7 +78,7 @@ void Server::UpdateServer(){
 	}
 
 	memset(packetBuffer, 0x0, BUFFERSIZE);//clear the buffer
-	memcpy(serverPacket, packetBuffer , sizeof(ServerPacket));
+	memcpy(packetBuffer, serverPacket , sizeof(ServerPacket));
 
 	// send the server packet to all players
 	for (int i = 0; i < numConnections; i++){
@@ -97,6 +106,7 @@ void Server::ProcessMessage(WPARAM msg, LPARAM lParam){
 
 		case FD_READ:{
 			
+			memset(msgBuffer, 0x0, BUFFERSIZE);//clear the buffer
 			int bytes = socket->Receive(msgBuffer);
 			//check for any errors on the socket
 			if(bytes == SOCKET_ERROR){
@@ -107,8 +117,8 @@ void Server::ProcessMessage(WPARAM msg, LPARAM lParam){
 			// We have received data so process it			
 			if(bytes > 0){
 				sockaddr_in clientAddress = socket->GetDestinationAddress();
-				cout << "Received data from " << inet_ntoa(clientAddress.sin_addr);				
-				memcpy(&recvPacket, msgBuffer, sizeof(recvPacket));
+				cout << "Received data from " << inet_ntoa(clientAddress.sin_addr) << endl;					
+				memcpy(&recvPacket, msgBuffer , sizeof(recvPacket));
 				//if a new client has connected - add him
 				if (!ClientExists(clientAddress)){
 					cout << "New client connected! " << endl;

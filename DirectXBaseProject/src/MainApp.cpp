@@ -22,21 +22,26 @@
 #include "ModelObject.h"
 #include "console.h"
 #include "Server.h"
+#include "Client.h"
 #include <list>
 
 using namespace std;
+
+enum gameMode_t {SINGLE,CLIENT,SERVER};
 
 class MainApp : public D3DApp
 {
 public:
 	MainApp(HINSTANCE hInstance);
 	~MainApp();
-	int scale;
+	int				scale;
 
-	float rotAngle;
+	gameMode_t		gameMode;
+
 
 	void processInput();
 
+	void initGame();
 	void initApp();
 
 	void onResize();
@@ -50,7 +55,7 @@ private:
 	void buildTransparentBS();
 	void animateLights();
 	void SwitchCameras();
-	void MouseInput();
+	void MouseInput();	
 	void initCameras();
 	void initModels();
 	void initGrids();
@@ -58,6 +63,8 @@ private:
 
 	void drawGrids();
 	void drawModels();
+
+	
  
 private:
 	ID3D10BlendState*		transparentBS;
@@ -93,7 +100,10 @@ private:
 
 //server stuff
 private:
+	void			initServer();
+	void			initClient();
 	Server			*server;
+	Client			*client;
 };
 
 LRESULT MainApp::msgProc(UINT msg, WPARAM wParam, LPARAM lParam){
@@ -118,12 +128,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 #endif
 
 	ShowWin32Console();
-	
-	MainApp theApp(hInstance);
-	
-	theApp.initApp();
 
-	
+	MainApp theApp(hInstance);
+
+	theApp.D3DApp::initApp();
+
+	theApp.initGame();
+	cout << "Game Starting..." << endl;
+	theApp.initApp();	
 
 	return theApp.run();
 }
@@ -136,7 +148,6 @@ MainApp::MainApp(HINSTANCE hInstance)
 	D3DXMatrixIdentity(&mWVP); 
 
 	aspectRatio = 0.5f;
-	rotAngle = 0.0f;
 
 	mouseInput = false;
 
@@ -171,6 +182,8 @@ MainApp::MainApp(HINSTANCE hInstance)
 	lightShader = NULL;	
 	texShader = NULL;
 	colorShader = NULL;
+	client =  NULL;
+	server = NULL;
 }
 
 MainApp::~MainApp(){
@@ -233,8 +246,30 @@ void MainApp::buildTransparentBS(){
 	HR(md3dDevice->CreateBlendState(&blendDesc, &transparentBS));
 }
 
-void MainApp::initApp(){
-	D3DApp::initApp();	
+void MainApp::initGame(){
+	char decision;
+	cout << "Welcome to Val's very first DirectX and Server gig" << endl;
+	cout << "Are you playing multi or single player?" << endl;
+	cout << "Multi-player y/n: ";
+	cin >> decision;
+	if (decision != 'y'){
+		gameMode = SINGLE;
+		return;
+	}
+	cout << "Would you like to start as a server or a client? " << endl;
+	cout << "Start as a server y/n: ";
+	cin >> decision;
+	if (decision == 'y'){
+		gameMode = SERVER;
+		initServer();
+	}
+	else{
+		gameMode = CLIENT;
+		initClient();
+	}
+}
+
+void MainApp::initApp(){	
 	buildTransparentBS();
 
 	initCameras();
@@ -242,9 +277,20 @@ void MainApp::initApp(){
 	initGrids();
 	initShaders();	
 
+	
+}
+
+void MainApp::initServer(){
 	server = new Server();
-	if (!server->StartServer()){
+	if (!server->StartServer(getMainWnd())){
 		cout << "Server Failed to start" << endl;
+	}
+}
+
+void MainApp::initClient(){
+	client = new Client();
+	if (!client->Initialize()){
+		cout << "Client failed to start" << endl;
 	}
 }
 
@@ -282,6 +328,10 @@ void MainApp::initModels(){
 	}
 	gameObjectList.push_back(model);
 	model->pos = Vector3f(0,1.5f,0);
+
+	if (client){
+		client->SetClientTarget(model->pos);
+	}
 	/*model2 = new ModelObject(*model);
 	model2->pos = Vector3f(8,7,0);
 	gameObjectList.push_back(model2);*/
@@ -389,9 +439,9 @@ void MainApp::processInput(){
 	}
 
 	//enable or disable mouse input
-	if ((GetAsyncKeyState(VK_RETURN) & 0x8000)){
+	/*if ((GetAsyncKeyState(VK_RETURN) & 0x8000)){
 		mouseInput = !mouseInput;
-	}
+	}*/
 	if (mouseInput)
 		MouseInput();
 
@@ -452,7 +502,18 @@ void MainApp::onResize(){
 }
 
 void MainApp::updateScene(float dt){
-	server->Update(dt);
+	switch (gameMode){
+	case SINGLE:
+		break;
+	case SERVER:
+		server->Update(dt);
+		break;
+	case CLIENT:
+		//send info data to server every 0.1 second
+		client->Update(dt);
+		break;
+	}
+	
 	D3DApp::updateScene(dt);
 	animateLights();
 	water->AnimateUV(dt);

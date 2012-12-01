@@ -5,7 +5,7 @@
 
 #include <vector>
 
-#define			SERVER_UPDATE_PERIOD		0.1		//in seconds
+#define			SERVER_UPDATE_PERIOD		1.0		// in seconds
 
 using namespace std;
 
@@ -19,8 +19,7 @@ public:
 	Server(void);
 	~Server(void);
 
-
-	bool			StartServer();
+	bool			StartServer(HWND hwnd);
 	void			ProcessMessage(WPARAM msg, LPARAM lParam);
 	void			Update(float dt);
 

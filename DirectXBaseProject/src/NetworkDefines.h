@@ -9,6 +9,7 @@
 
 //the port of the server to connect to
 #define SERVERPORT 5555
+#define CLIENTPORT 5556
 
 #define WM_SOCKET (WM_USER+1)	//handle socket messages in windows message loops
 

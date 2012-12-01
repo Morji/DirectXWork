@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\Client.cpp" />
     <ClCompile Include="..\src\console.cpp" />
     <ClCompile Include="..\src\CubeObject.cpp" />
     <ClCompile Include="..\src\d3dApp.cpp" />
@@ -30,6 +31,7 @@
     <ClCompile Include="..\src\TextureLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\Client.h" />
     <ClInclude Include="..\src\console.h" />
     <ClInclude Include="..\src\CubeObject.h" />
     <ClInclude Include="..\src\d3dApp.h" />
@@ -51,6 +53,7 @@
     <ClInclude Include="..\src\TextureLoader.h" />
     <ClInclude Include="..\src\TgaHeader.h" />
     <ClInclude Include="..\src\Vertex.h" />
+    <ClInclude Include="Client.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\color.fx" />
