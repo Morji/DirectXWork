@@ -73,6 +73,9 @@ protected:
 	D3DXCOLOR mClearColor;
 	int mClientWidth;
 	int mClientHeight;
+	POINT	clickedPoint;
+	bool	mouseInput;
+	bool	mouseRightB;	//wether its the right mouse button that is clicked
 };
 
 

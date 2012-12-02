@@ -140,6 +140,11 @@ sockaddr_in CUDPSocket::GetDestinationAddress(void)
 	return m_RemoteAddress;
 }
 
+sockaddr_in CUDPSocket::GetLocalAddress(void)
+{
+	return m_LocalAddress;
+}
+
 void CUDPSocket::SetDestinationAddress(char * IP, const int Port)
 {
 	m_RemoteAddress.sin_family = AF_INET;

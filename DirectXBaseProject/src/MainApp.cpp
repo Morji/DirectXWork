@@ -38,11 +38,12 @@ public:
 
 	gameMode_t		gameMode;
 
-
-	void processInput();
+	void processInput(float dt);
 
 	void initGame();
 	void initApp();
+	void initServer();
+	void initClient();
 
 	void onResize();
 	void updateScene(float dt);
@@ -64,8 +65,6 @@ private:
 	void drawGrids();
 	void drawModels();
 
-	
- 
 private:
 	ID3D10BlendState*		transparentBS;
 
@@ -92,16 +91,13 @@ private:
 
 	float			aspectRatio;
 
-	D3DXMATRIX mView;
-	D3DXMATRIX mProj;
-	D3DXMATRIX mWVP;
+	D3DXMATRIX		mView;
+	D3DXMATRIX		mProj;
+	D3DXMATRIX		mWVP;
 
-	bool			mouseInput;
-
+	POINT			mouseLastPoint;
 //server stuff
 private:
-	void			initServer();
-	void			initClient();
 	Server			*server;
 	Client			*client;
 };
@@ -109,9 +105,17 @@ private:
 LRESULT MainApp::msgProc(UINT msg, WPARAM wParam, LPARAM lParam){
 	D3DApp::msgProc(msg,wParam,lParam);
 	switch( msg ){
+		case WM_SOCKET:
 	// Get network messages
-	case WM_SOCKET:
-		server->ProcessMessage(wParam, lParam);
+		switch (gameMode){			
+			case SERVER:
+				server->ProcessMessage(wParam, lParam);
+				break;
+			case CLIENT:
+				client->ProcessMessage(wParam, lParam);
+				break;
+		}
+		
 		break;
 	}
 
@@ -131,11 +135,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 
 	MainApp theApp(hInstance);
 
-	theApp.D3DApp::initApp();
+	theApp.initGame();	
 
-	theApp.initGame();
-	cout << "Game Starting..." << endl;
+	theApp.D3DApp::initApp();
+	
+	cout << "Loading up game..." << endl;
 	theApp.initApp();	
+
+	switch (theApp.gameMode){
+	case SERVER:
+		theApp.initServer();
+		break;
+	case CLIENT:
+		theApp.initClient();
+		break;
+	}
+
+	cout << "Starting game..." << endl;
 
 	return theApp.run();
 }
@@ -148,8 +164,6 @@ MainApp::MainApp(HINSTANCE hInstance)
 	D3DXMatrixIdentity(&mWVP); 
 
 	aspectRatio = 0.5f;
-
-	mouseInput = false;
 
 	lightType = L_PARALLEL;//start light type is parallel
 
@@ -229,6 +243,11 @@ MainApp::~MainApp(){
 		delete server;
 		server = nullptr;
 	}
+
+	if (client){
+		delete client;
+		client = nullptr;
+	}
 }
 
 void MainApp::buildTransparentBS(){
@@ -260,12 +279,12 @@ void MainApp::initGame(){
 	cout << "Start as a server y/n: ";
 	cin >> decision;
 	if (decision == 'y'){
-		gameMode = SERVER;
-		initServer();
+		gameMode = SERVER;		
 	}
 	else{
 		gameMode = CLIENT;
-		initClient();
+		client = new Client();
+		client->SetServerDetails();
 	}
 }
 
@@ -285,12 +304,17 @@ void MainApp::initServer(){
 	if (!server->StartServer(getMainWnd())){
 		cout << "Server Failed to start" << endl;
 	}
+	else
+		server->SetTarget(model->pos);
 }
 
 void MainApp::initClient(){
-	client = new Client();
-	if (!client->Initialize()){
-		cout << "Client failed to start" << endl;
+	if (client){
+		if (!client->Initialize(getMainWnd())){
+			cout << "Client failed to start" << endl;
+		}
+		else
+			client->SetClientTarget(model->pos);
 	}
 }
 
@@ -328,10 +352,6 @@ void MainApp::initModels(){
 	}
 	gameObjectList.push_back(model);
 	model->pos = Vector3f(0,1.5f,0);
-
-	if (client){
-		client->SetClientTarget(model->pos);
-	}
 	/*model2 = new ModelObject(*model);
 	model2->pos = Vector3f(8,7,0);
 	gameObjectList.push_back(model2);*/
@@ -390,7 +410,7 @@ void MainApp::initShaders(){
 }
 
 ///Any input key processing - to it here
-void MainApp::processInput(){
+void MainApp::processInput(float dt){
 	if (GetAsyncKeyState(VK_ESCAPE)){
 		PostQuitMessage(0);
 	}
@@ -398,34 +418,34 @@ void MainApp::processInput(){
 	//if we are using the god camera - use standart input to move it
 	if (currentCam == godCamera){
 		if (GetAsyncKeyState('W')){
-			godCamera->moveBackForward += godCamera->camMoveFactor*mTimer.getDeltaTime();
+			godCamera->moveBackForward += godCamera->camMoveFactor*dt;
 		}
 		if (GetAsyncKeyState('S')){
-			godCamera->moveBackForward -= godCamera->camMoveFactor*mTimer.getDeltaTime();
+			godCamera->moveBackForward -= godCamera->camMoveFactor*dt;
 		}
 		if (GetAsyncKeyState('A')){
-			godCamera->moveLeftRight -= godCamera->camMoveFactor*mTimer.getDeltaTime();
+			godCamera->moveLeftRight -= godCamera->camMoveFactor*dt;
 		}
 		if (GetAsyncKeyState('D')){
-			godCamera->moveLeftRight += godCamera->camMoveFactor*mTimer.getDeltaTime();
+			godCamera->moveLeftRight += godCamera->camMoveFactor*dt;
 		}
 	}
 	//else if we are using the player camera switch input to player movement
 	else{
 		if (GetAsyncKeyState('W')){
-			model->MoveFacing(10*mTimer.getDeltaTime());
+			model->MoveFacing(10*dt);
 			model->pos.y = terrain->GetHeight(model->pos.x,model->pos.z) + 1.0f;
 		}
 		if (GetAsyncKeyState('S')){
-			model->MoveFacing(-10*mTimer.getDeltaTime());
+			model->MoveFacing(-10*dt);
 			model->pos.y = terrain->GetHeight(model->pos.x,model->pos.z) + 1.0f;
 		}
 		if (GetAsyncKeyState('A')){
-			model->MoveStrafe(-10*mTimer.getDeltaTime());
+			model->MoveStrafe(-10*dt);
 			model->pos.y = terrain->GetHeight(model->pos.x,model->pos.z) + 1.0f;
 		}
 		if (GetAsyncKeyState('D')){
-			model->MoveStrafe(10*mTimer.getDeltaTime());
+			model->MoveStrafe(10*dt);
 			model->pos.y = terrain->GetHeight(model->pos.x,model->pos.z) + 1.0f;
 		}
 		playerCamera->SetPosition(model->pos);
@@ -438,10 +458,6 @@ void MainApp::processInput(){
 		light[0].dir += Vector3f(0,0,-0.005f);
 	}
 
-	//enable or disable mouse input
-	/*if ((GetAsyncKeyState(VK_RETURN) & 0x8000)){
-		mouseInput = !mouseInput;
-	}*/
 	if (mouseInput)
 		MouseInput();
 
@@ -457,24 +473,27 @@ void MainApp::processInput(){
 }
 
 void MainApp::MouseInput(){
-	POINT mousePos; 
-	int mid_x = mClientWidth >> 1; //dividing by 2 in a fancy way
-	int mid_y = mClientHeight >> 1; //dividing by 2 in a fancy way
+	POINT mousePoint; 
 
-	GetCursorPos(&mousePos);
-	SetCursorPos(mid_x, mid_y);
+	GetCursorPos(&mousePoint);
 
-	float yaw = (float)( (mid_x - mousePos.x) ) / 1000; 
-	float pitch = (float)( (mid_y - mousePos.y) ) / 1000;
+	if (mousePoint.x != clickedPoint.x || mousePoint.y != clickedPoint.y){
+		float yaw = (clickedPoint.x - mousePoint.x) * mTimer.getDeltaTime();
+		float pitch = (clickedPoint.y - mousePoint.y) * mTimer.getDeltaTime(); 
 
-	if (currentCam == godCamera){
-		currentCam->MoveYawPitch(yaw,pitch);
-	}
-	else{
-		model->theta.y -= yaw;
-		currentCam->SetRotation(model->theta);
-		currentCam->MoveYawPitch(0.0f,pitch);
-	}
+		if (currentCam == godCamera){
+			currentCam->MoveYawPitch(yaw,pitch);
+		}
+		else{
+			//if right mouse button is clicked - move model with the mouse
+			if (mouseRightB){
+				model->theta.y -= yaw;	
+			}
+			currentCam->MoveYawPitch(yaw,pitch);			
+		}
+
+		clickedPoint = mousePoint;
+	}	
 }
 
 void MainApp::mouseScroll(int amount){
@@ -514,6 +533,7 @@ void MainApp::updateScene(float dt){
 		break;
 	}
 	
+	processInput(dt);
 	D3DApp::updateScene(dt);
 	animateLights();
 	water->AnimateUV(dt);

@@ -38,6 +38,7 @@ public:
 	int SendTo(char * Buffer, sockaddr_in& address);
 	void SetDestinationAddress(char * IP, const int Port);
 	sockaddr_in GetDestinationAddress(void);
+	sockaddr_in GetLocalAddress(void);
 
 	SOCKET GetSocket();
 protected:

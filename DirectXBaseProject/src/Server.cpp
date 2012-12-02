@@ -5,6 +5,8 @@ Server::Server(){
 	serverPacketNum = 0;
 	numConnections = 0;
 	millis = 0;
+	serverId = 0;
+	posToSend = 0;
 }
 
 Server::~Server(){
@@ -12,16 +14,24 @@ Server::~Server(){
 		delete socket;
 		socket = nullptr;
 	}
+	/*if (posToSend){
+		delete posToSend;
+		posToSend = nullptr;
+	}*/
 	if (serverPacket){
 		delete serverPacket;
 		serverPacket = nullptr;
 	}
+	while (!clientVector.empty()){
+		clientVector.pop_back();
+	}
+	clientVector.clear();
 	WSACleanup();
 }
 
 bool Server::StartServer(HWND hwnd){
 
-	serverPacket = new ServerPacket(numConnections);
+	serverPacket = new ServerPacket();
 
 	cout << "Starting server" << endl;
 	if (!socket->Initialise()){
@@ -36,25 +46,30 @@ bool Server::StartServer(HWND hwnd){
 
 	WSAAsyncSelect (socket->GetSocket(),hwnd,WM_SOCKET,( FD_READ ));
 
-	cout << "Server startup message: " << WSAGetLastError() << endl;
+	if (WSAGetLastError() != 0)
+		cout << "Server error message: " << WSAGetLastError() << endl;
+
+	serverId = socket->GetLocalAddress().sin_addr.S_un.S_addr;
 
 	return true;
 }
 
-void Server::AddClient(sockaddr_in &address,Vector3f &pos){
-	//add client to vector of client info
-	ClientInfo info;
-	info.clientAddress = address;
-	info.clientPos = pos;
-	
-	clientVector.push_back(info);
+void Server::SetTarget(Vector3f &posToTrack){
+	posToSend = &posToTrack;
 }
 
-void Server::UpdateClient(sockaddr_in &address,Vector3f &pos){
+void Server::AddClient(ClientInfo &clientInfo){
+	//add client to vector of client info
+	cout << "New client connected! IP: " << inet_ntoa(clientInfo.clientAddress.sin_addr) << endl;
+
+	clientVector.push_back(clientInfo);
+}
+
+void Server::UpdateClient(ClientInfo &clientInfo){
 	for (int i = 0; i < numConnections; i++){
-		if (clientVector.at(i).clientAddress.sin_addr.S_un.S_addr == address.sin_addr.S_un.S_addr){
-			clientVector.at(i).clientPos = pos;
-			cout << "Updating client pos to: " << pos.x << ", " << pos.y << "," << pos.z << endl;
+		if (clientVector.at(i).clientAddress.sin_addr.S_un.S_addr == clientInfo.clientAddress.sin_addr.S_un.S_addr){
+			clientVector.at(i).clientPos = clientInfo.clientPos;
+			//cout << "Updating client pos to: " << clientInfo.clientPos.x << ", " << clientInfo.clientPos.y << "," << clientInfo.clientPos.z << endl;
 			return;
 		}
 	}
@@ -63,22 +78,30 @@ void Server::UpdateClient(sockaddr_in &address,Vector3f &pos){
 //Send all client info to every client
 void Server::UpdateServer(){
 
-	//only create a new version of the server packet if the client size has changed
-	if (numConnections != serverPacket->GetClientSize()){
-		delete serverPacket;
-		serverPacket = nullptr;
-		serverPacket = new ServerPacket(numConnections);
-	}
-	
+	memset(data,0x0,16);
 	serverPacket->ID = ++serverPacketNum;
-
-	// place the position data in the packet
-	for (int i = 0; i < numConnections; i++){
-		serverPacket->positionData[i] = clientVector.at(i).clientPos;
+	serverPacket->clientData.clear();
+	//position 0 is always the server
+	int byteStart = 0;
+	int byteEnd = sizeof(ClientData);
+	memcpy(data,&ClientData(*posToSend,serverId),sizeof(ClientData));
+	for (int i = byteStart; i < byteEnd; i++){
+		serverPacket->clientData.push_back(data[i]);
 	}
 
+	/*memset(data,0x0,sizeof(ClientData));
+	// place the position data from the clients in the packet
+	for (int i = 0; i < numConnections; i++){
+		memcpy(data,&ClientData(clientVector.at(i).clientPos,clientVector.at(i).clientAddress.sin_addr.S_un.S_addr),sizeof(ClientData));
+		for (int j = byteStart; j < byteEnd; j++){
+			serverPacket->clientData.push_back(data[j]);
+		}
+		memset(data,0x0,sizeof(ClientData));
+	}*/
+
+	serverPacket->packetSize = sizeof(ServerPacket) + (1)*sizeof(ClientData);
 	memset(packetBuffer, 0x0, BUFFERSIZE);//clear the buffer
-	memcpy(packetBuffer, serverPacket , sizeof(ServerPacket));
+	memcpy(packetBuffer, serverPacket , serverPacket->packetSize);
 
 	// send the server packet to all players
 	for (int i = 0; i < numConnections; i++){
@@ -117,17 +140,17 @@ void Server::ProcessMessage(WPARAM msg, LPARAM lParam){
 			// We have received data so process it			
 			if(bytes > 0){
 				sockaddr_in clientAddress = socket->GetDestinationAddress();
-				cout << "Received data from " << inet_ntoa(clientAddress.sin_addr) << endl;					
+				//cout << "Received data from " << inet_ntoa(clientAddress.sin_addr) << endl;					
 				memcpy(&recvPacket, msgBuffer , sizeof(recvPacket));
 				//if a new client has connected - add him
+				ClientInfo info = {recvPacket.position,clientAddress};
 				if (!ClientExists(clientAddress)){
-					cout << "New client connected! " << endl;
-					numConnections++;
-					AddClient(clientAddress,recvPacket.position);
+					numConnections++;					
+					AddClient(info);
 				}
 				//else if a connected client is sending updates - update him
 				else{
-					UpdateClient(clientAddress,recvPacket.position);
+					UpdateClient(info);
 				}
 			}
 			break;}

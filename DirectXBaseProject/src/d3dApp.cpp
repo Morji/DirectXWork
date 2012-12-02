@@ -30,6 +30,7 @@ MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 D3DApp::D3DApp(HINSTANCE hInstance)
 {
+	mouseInput = mouseRightB = false;
 	srand ( time(NULL) );//seed the random number generator
 
 	mhAppInst   = hInstance;
@@ -101,7 +102,6 @@ int D3DApp::run()
 			else
 				Sleep(30);
 
-			processInput();
 			drawScene();
         }
     }
@@ -353,6 +353,27 @@ LRESULT D3DApp::msgProc(UINT msg, WPARAM wParam, LPARAM lParam)
 
 	case WM_MOUSEWHEEL:
 			mouseScroll(GET_WHEEL_DELTA_WPARAM(wParam));
+			break;
+
+	case WM_LBUTTONDOWN:
+			GetCursorPos(&clickedPoint);
+			mouseInput = true;
+			mouseRightB = false;
+			break;
+
+	case WM_LBUTTONUP:
+			mouseInput = false;
+			break;
+
+	case WM_RBUTTONDOWN:
+			GetCursorPos(&clickedPoint);
+			mouseInput = true;
+			mouseRightB = true;
+			break;
+
+	case WM_RBUTTONUP:
+			mouseInput = false;
+			mouseRightB = false;
 			break;
 
 	// The WM_MENUCHAR message is sent when a menu is active and the user presses 
