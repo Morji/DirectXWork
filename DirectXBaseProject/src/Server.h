@@ -41,12 +41,12 @@ private:
 	vector<ClientInfo>			clientVector;			// The collection of clients connected to this server	
 
 	CUDPSocket					*socket;
-	ServerPacket				*serverPacket;			// the game state packet to send to clients
+	ServerPacket				serverPacket;			// the game state packet to send to clients
 	Packet						recvPacket;				// packet to handle receiving of any client data;
 
 	char						msgBuffer[BUFFERSIZE];
 	char						packetBuffer[BUFFERSIZE];
-	char						data[16];
+	//char						data[16];
 	int							numConnections;			// Keep track of number of connections	
 	int							serverPacketNum;
 

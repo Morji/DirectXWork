@@ -14,10 +14,6 @@ Client::~Client(void){
 		delete socket;
 		socket = nullptr;
 	}
-	if (packet){
-		delete packet;
-		packet = nullptr;
-	}
 	/*if (posToSend){
 		delete posToSend;
 		posToSend = nullptr;
@@ -28,13 +24,6 @@ Client::~Client(void){
 bool Client::Initialize(HWND hwnd){
 
 	socket = new CUDPSocket();
-
-	packet = new Packet();
-	if (!packet){
-		cout << "Failure initializing socket" << endl;
-		return false;
-	}
-	packet->ID = 0;
 
 	if (!socket->Initialise()){
 		cout << "Failure initializing socket" << endl;
@@ -91,25 +80,11 @@ void Client::ProcessServerData(){
 	}
 	int byteStart = 0;
 	int byteEnd = sizeof(ClientData);
-	char *data = new char[sizeof(ClientData)];
-	ClientData *playerInfo = new ClientData;
-	for (int i = 0; i < numPlayers; i++){
-		for (int j = byteStart; j < byteEnd; j++){
-			data[j-byteStart] = recvPacket.clientData.at(j);		
-		}		
-		memcpy(playerInfo,data,sizeof(ClientData));
-		cout << "Player with id: " << playerInfo->clientID << " new position: " << playerInfo->clientPos.x << "," << playerInfo->clientPos.y << "," << playerInfo->clientPos.z << endl;
-		byteStart = byteEnd;
-		byteEnd += sizeof(ClientData);
-		memset(data,0x0,sizeof(ClientData));
+	ClientData playerInfo;
+	for (int i = 0; i < numPlayers; i++){		
+		memcpy(&playerInfo,recvPacket.data+sizeof(ClientData)*i,sizeof(ClientData));
+		cout << "Player with id: " << playerInfo.clientID << " new position: " << playerInfo.clientPos.x << "," << playerInfo.clientPos.y << "," << playerInfo.clientPos.z << endl;
 	}
-
-	//this deletes both pointers
-	delete playerInfo;
-	playerInfo = nullptr;
-
-	delete [] data;
-	data = nullptr;
 }
 
 // Processes any pending network messages
@@ -134,7 +109,7 @@ void Client::ProcessMessage(WPARAM msg, LPARAM lParam){
 				short packetSize = 0;
 				memcpy(&packetSize, msgBuffer , 2);//get the packet size
 				memcpy(&recvPacket,msgBuffer,packetSize);//copy the required amount into the packet
-				if (recvPacket.ID > serverPacketNum){
+				if (recvPacket.ID != serverPacketNum){
 					serverPacketNum = recvPacket.ID;
 					ProcessServerData();
 					
@@ -145,9 +120,9 @@ void Client::ProcessMessage(WPARAM msg, LPARAM lParam){
 }
 
 void Client::SendToServer(){
-	packet->ID++;
-	packet->position = *posToSend;
+	packet.ID++;
+	packet.position = *posToSend;
 	memset(msgBuffer, 0x0, BUFFERSIZE);//clear the buffer
-	memcpy(msgBuffer, packet , sizeof(Packet));
+	memcpy(msgBuffer, &packet , sizeof(Packet));
 	socket->Send(msgBuffer);
 }

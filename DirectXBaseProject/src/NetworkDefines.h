@@ -17,6 +17,8 @@
 #define MSG_CONNECTED	(0x41)	//A
 #define NUMCONN			(4)
 
+///REMEMBER - MAX UDP PACKET SIZE IS ~ 512 BYTES TO MAKE SURE IT DOESN'T GET SPLIT UP
+
 /* The client info struct is to be used by the server 
 to keep a track of the clients and update each ones info
 correctly - it is used internally and not sent over the network*/
@@ -51,24 +53,22 @@ struct Packet{
 };
 
 struct ServerPacket{
-	short				packetSize;
-	int					ID;
-	std::vector<char>	clientData;
-	//also an extra 2 bytes from...somewhere?
+	short				packetSize; // 2 bytes
+	int					ID;			// 4 bytes
+	//char				data[32];	// 32 bytes(2*ClientData)
+									
+	char				data[1];	// stretchy array - the size of it will be PlayerCount*sizeof(ClientData)
+
 	ServerPacket(){
 		ID = 0;
 		packetSize = 0;
 	}
 
 	~ServerPacket(){
-		/*if (clientData){
-			delete [] clientData;
-			clientData = nullptr;
-		}*/
 	}
 
 	int GetPlayerCount(){
-		return ((packetSize)-28)/sizeof(ClientData);
+		return ((packetSize)-7)/sizeof(ClientData);
 	}
 };
 

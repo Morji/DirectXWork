@@ -18,10 +18,6 @@ Server::~Server(){
 		delete posToSend;
 		posToSend = nullptr;
 	}*/
-	if (serverPacket){
-		delete serverPacket;
-		serverPacket = nullptr;
-	}
 	while (!clientVector.empty()){
 		clientVector.pop_back();
 	}
@@ -30,8 +26,6 @@ Server::~Server(){
 }
 
 bool Server::StartServer(HWND hwnd){
-
-	serverPacket = new ServerPacket();
 
 	cout << "Starting server" << endl;
 	if (!socket->Initialise()){
@@ -78,30 +72,19 @@ void Server::UpdateClient(ClientInfo &clientInfo){
 //Send all client info to every client
 void Server::UpdateServer(){
 
-	memset(data,0x0,16);
-	serverPacket->ID = ++serverPacketNum;
-	serverPacket->clientData.clear();
-	//position 0 is always the server
-	int byteStart = 0;
-	int byteEnd = sizeof(ClientData);
-	memcpy(data,&ClientData(*posToSend,serverId),sizeof(ClientData));
-	for (int i = byteStart; i < byteEnd; i++){
-		serverPacket->clientData.push_back(data[i]);
+	memset(serverPacket.data,0x0,sizeof(ClientData)*(numConnections+1));
+	serverPacket.ID = ++serverPacketNum;
+	//position 0 is always the server	
+	memcpy(serverPacket.data,&ClientData(*posToSend,serverId),sizeof(ClientData));
+
+	for (int i = 0; i < numConnections; i++){
+		memcpy(serverPacket.data+(i+1)*sizeof(ClientData),&ClientData(clientVector.at(i).clientPos,i+1),sizeof(ClientData));
 	}
 
-	/*memset(data,0x0,sizeof(ClientData));
-	// place the position data from the clients in the packet
-	for (int i = 0; i < numConnections; i++){
-		memcpy(data,&ClientData(clientVector.at(i).clientPos,clientVector.at(i).clientAddress.sin_addr.S_un.S_addr),sizeof(ClientData));
-		for (int j = byteStart; j < byteEnd; j++){
-			serverPacket->clientData.push_back(data[j]);
-		}
-		memset(data,0x0,sizeof(ClientData));
-	}*/
+	serverPacket.packetSize = 7 + sizeof(ClientData)*(numConnections+1);
 
-	serverPacket->packetSize = sizeof(ServerPacket) + (1)*sizeof(ClientData);
 	memset(packetBuffer, 0x0, BUFFERSIZE);//clear the buffer
-	memcpy(packetBuffer, serverPacket , serverPacket->packetSize);
+	memcpy(packetBuffer, &serverPacket , serverPacket.packetSize);
 
 	// send the server packet to all players
 	for (int i = 0; i < numConnections; i++){

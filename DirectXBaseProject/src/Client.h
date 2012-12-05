@@ -31,7 +31,7 @@ private:
 	Vector3f		*posToSend;				// a pointer to a vector3f that holds the position data to send to the server
 	CUDPSocket		*socket;
 	ServerPacket	recvPacket;			// the packet to receive from the server
-	Packet			*packet;				// the packet to send to the server
+	Packet			packet;				// the packet to send to the server
 	char			msgBuffer[BUFFERSIZE];	// a buffer...for messages...what'd you expect?
 
 	int				serverPacketNum;		// keep track of the server packets coming in
