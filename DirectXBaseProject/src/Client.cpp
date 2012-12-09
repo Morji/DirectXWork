@@ -3,41 +3,34 @@
 
 Client::Client(void){
 	serverPacketNum = 0;
-	millis = 0;
-	posToSend = 0;
 	numPlayers = 0;
+	currentPlayerData = 0;
 }
 
 
 Client::~Client(void){
-	if (socket){
-		delete socket;
-		socket = nullptr;
+	if (currentPlayerData){
+		delete [] currentPlayerData;
+		currentPlayerData = nullptr;
 	}
-	/*if (posToSend){
-		delete posToSend;
-		posToSend = nullptr;
-	}*/
 	WSACleanup();
 }
 
 bool Client::Initialize(HWND hwnd){
 
-	socket = new CUDPSocket();
-
-	if (!socket->Initialise()){
+	if (!socket.Initialise()){
 		cout << "Failure initializing socket" << endl;
 		return false;
 	}
 	
-	if (!socket->Bind(CLIENTPORT)){
+	if (!socket.Bind(CLIENTPORT)){
 		cout << "Failure initializing socket" << endl;
 		return false;
 	}	
 
-	socket->SetDestinationAddress(serverIP,portNum);
+	socket.SetDestinationAddress(serverIP,portNum);
 
-	WSAAsyncSelect (socket->GetSocket(),hwnd,WM_SOCKET,( FD_READ ));
+	WSAAsyncSelect (socket.GetSocket(),hwnd,WM_SOCKET,( FD_READ ));
 
 	if (WSAGetLastError() != 0)
 		cout << "Client error message: " << WSAGetLastError() << endl;
@@ -59,31 +52,52 @@ void Client::SetServerDetails(){
 		portNum = SERVERPORT;
 }
 
-void Client::SetClientTarget(Vector3f &posToTrack){
-	posToSend = &posToTrack;
-}
-
 void Client::Update(float dt){
 	millis+= dt;
 	if (millis >= CLIENT_UPDATE_PERIOD){
 		SendToServer();
 		millis = 0.0f;
 	}
+	if (players){
+		LerpPlayersPositions(millis);
+	}
+}
+
+void Client::LerpPlayersPositions(float dt){
+	for (int i = 0; i < numPlayers; i++){		
+		D3DXVec3Lerp(&players[i].playerData.pos,&players[i].playerData.pos,&currentPlayerData[i].playerData.pos,dt);
+		D3DXVec3Lerp(&players[i].playerData.rot,&players[i].playerData.rot,&currentPlayerData[i].playerData.rot,dt);
+	}
 }
 
 // Read the server packet and update client info as necessary
-void Client::ProcessServerData(){
+void Client::ProcessServerData(){	
 	/*if the server client size is different than the amount of a players
-	a player has either connected or disconnected - act accordingly*/
-	if (recvPacket.GetPlayerCount() != numPlayers){
-		numPlayers = recvPacket.GetPlayerCount();
-	}
-	int byteStart = 0;
-	int byteEnd = sizeof(ClientData);
-	ClientData playerInfo;
-	for (int i = 0; i < numPlayers; i++){		
-		memcpy(&playerInfo,recvPacket.data+sizeof(ClientData)*i,sizeof(ClientData));
-		cout << "Player with id: " << playerInfo.clientID << " new position: " << playerInfo.clientPos.x << "," << playerInfo.clientPos.y << "," << playerInfo.clientPos.z << endl;
+	a player has either connected or disconnected - act accordingly*/	
+	if (recvPacket.numPlayers != numPlayers){
+		numPlayers = recvPacket.numPlayers;
+		delete [] currentPlayerData;
+		currentPlayerData = new ClientData[numPlayers];
+		playerJoined = true;
+	}	
+	short size = sizeof(ClientData)*recvPacket.numPlayers;//set the player data buffer to be as big as necessary
+	memset(currentPlayerData,0x0,size);
+	memcpy(currentPlayerData,packetBuffer+sizeof(ServerPacket),size);
+	serverPacketNum = recvPacket.ID;	
+
+	//a new player has joined/left so reset the player data
+	if (playerJoined)
+		ResetPlayerData();
+}
+
+void Client::ResetPlayerData(){
+	delete [] players;
+	players = new ClientData[numPlayers];
+
+	for (int i = 0; i < numPlayers; i++){
+		players[i].clientID = currentPlayerData[i].clientID;
+		players[i].playerData.pos = currentPlayerData[i].playerData.pos;
+		players[i].playerData.rot = currentPlayerData[i].playerData.rot;
 	}
 }
 
@@ -96,8 +110,8 @@ void Client::ProcessMessage(WPARAM msg, LPARAM lParam){
 	switch (WSAGETSELECTEVENT(lParam)){
 
 		case FD_READ:{			
-			memset(msgBuffer, 0x0, BUFFERSIZE);//clear the buffer
-			int bytes = socket->Receive(msgBuffer);
+			memset(packetBuffer, 0x0, SERVER_BUFFERSIZE);//clear the buffer
+			int bytes = socket.Receive(packetBuffer);
 			//check for any errors on the socket
 			if(bytes == SOCKET_ERROR){
 				int SocketError = WSAGetLastError();
@@ -105,14 +119,10 @@ void Client::ProcessMessage(WPARAM msg, LPARAM lParam){
 			}
 			// We have received data so process it			
 			if(bytes > 0){
-				sockaddr_in clientAddress = socket->GetDestinationAddress();
-				short packetSize = 0;
-				memcpy(&packetSize, msgBuffer , 2);//get the packet size
-				memcpy(&recvPacket,msgBuffer,packetSize);//copy the required amount into the packet
-				if (recvPacket.ID != serverPacketNum){
-					serverPacketNum = recvPacket.ID;
-					ProcessServerData();
-					
+				sockaddr_in clientAddress = socket.GetDestinationAddress();
+				recvPacket = *(ServerPacket*)packetBuffer;				
+				if (recvPacket.ID != serverPacketNum){					
+					ProcessServerData();					
 				}
 			}
 			break;}
@@ -121,8 +131,9 @@ void Client::ProcessMessage(WPARAM msg, LPARAM lParam){
 
 void Client::SendToServer(){
 	packet.ID++;
-	packet.position = *posToSend;
-	memset(msgBuffer, 0x0, BUFFERSIZE);//clear the buffer
+	packet.data.pos = *posToSend;
+	packet.data.rot = *rotToSend;
+	memset(msgBuffer, 0x0, CLIENT_BUFFERSIZE);//clear the buffer
 	memcpy(msgBuffer, &packet , sizeof(Packet));
-	socket->Send(msgBuffer);
+	socket.Send(msgBuffer);
 }

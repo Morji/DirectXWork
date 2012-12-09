@@ -1,11 +1,11 @@
 #ifndef SERVER_H
 #define SERVER_H
 
-#include "hsfsocket.h"
+#include "NetworkController.h"
 
 #include <vector>
 
-#define			SERVER_UPDATE_PERIOD		0.1		// in seconds
+#define			SERVER_UPDATE_PERIOD		0.1f		// in seconds
 
 using namespace std;
 
@@ -14,7 +14,8 @@ A Server implementation using the windows message loop.
 The server in this instance is a player in the game and 
 sends updates about itself to clients as well
 **/
-class Server{
+class Server : public NetworkController
+{
 public:
 	Server(void);
 	~Server(void);
@@ -23,34 +24,29 @@ public:
 	void			ProcessMessage(WPARAM msg, LPARAM lParam);
 	void			Update(float dt);
 
-	void			SetTarget(Vector3f &posToTrack);	// the playable target of the server
-
 private:
 	void			AddClient(ClientInfo &clientInfo);
 	bool			ClientExists(sockaddr_in &identifier);	//checks wether a client with this address exists in the collection of clients
 	void			UpdateServer();
 	void			UpdateClient(ClientInfo &clientInfo);	//updates the client associated with the current address
+	
+	void			LerpPlayersPositions(float dt);
+	void			ResetPlayerData();
 
 //Private members for the player operation
 private:
-	Vector3f					*posToSend;				// a pointer to a vector3f that holds the position data of the player
-	int							serverId;				// the id of the server player
+	ClientData				serverPlayerData;		// the client data of the server player
 //Private members for server operation
 private:
-	sockaddr_in					me;
-	vector<ClientInfo>			clientVector;			// The collection of clients connected to this server	
+	ServerPacket			serverPacket;			// the game state packet to send to clients
+	Packet					recvPacket;				// packet to handle receiving of any client data;
 
-	CUDPSocket					*socket;
-	ServerPacket				serverPacket;			// the game state packet to send to clients
-	Packet						recvPacket;				// packet to handle receiving of any client data;
+	vector<ClientInfo>		clientVector;			// The collection of info of clients connected to this server
 
-	char						msgBuffer[BUFFERSIZE];
-	char						packetBuffer[BUFFERSIZE];
-	//char						data[16];
-	int							numConnections;			// Keep track of number of connections	
-	int							serverPacketNum;
-
-	float						millis;					// Keep track time to update server at regular intervals
+	char					msgBuffer[CLIENT_BUFFERSIZE];	// a buffer...for messages...what'd you expect?
+	char					packetBuffer[SERVER_BUFFERSIZE];
+	int						numConnections;			// Keep track of number of connections	
+	int						serverPacketNum;
 };
 
 

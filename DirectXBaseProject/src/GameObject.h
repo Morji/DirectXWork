@@ -31,6 +31,8 @@ public:
 		for (int i = 0; i < 3; i++) diffuseMapRV[i] = 0;
 		D3DXMatrixIdentity(&mTexMatrix);
 	}
+
+
 	virtual ~GameObject()
 	{
 		Shutdown();

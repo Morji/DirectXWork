@@ -46,6 +46,12 @@
     <Filter Include="Source Files\Networking">
       <UniqueIdentifier>{e03d0b60-23dd-42ae-a72c-42e497692e24}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\GameEntities">
+      <UniqueIdentifier>{7d0e532b-eb6a-4e4d-9bfa-7a5ac743270b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GameEntities">
+      <UniqueIdentifier>{90bca586-0ee3-4119-92af-6c39c4de22b8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\d3dApp.cpp">
@@ -101,6 +107,12 @@
     </ClCompile>
     <ClCompile Include="..\src\Client.cpp">
       <Filter>Source Files\Networking</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\NetworkController.cpp">
+      <Filter>Source Files\Networking</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\GameEntity.cpp">
+      <Filter>Source Files\GameEntities</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -169,6 +181,12 @@
     </ClInclude>
     <ClInclude Include="..\src\Client.h">
       <Filter>Header Files\Networking</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\NetworkController.h">
+      <Filter>Header Files\Networking</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\GameEntity.h">
+      <Filter>Header Files\GameEntities</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

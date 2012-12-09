@@ -13,14 +13,14 @@ public:
 	/*The first two functions will load a texture from a given file name and unload that texture 
 	when it is no longer needed.*/
 	bool Initialize(ID3D10Device* device, WCHAR* filename);
-	void Shutdown();
+	bool Shutdown();
 
 	/*The GetTexture function returns a pointer to the texture resource so that it 
 	can be used for rendering by shaders.*/
 	ID3D10ShaderResourceView* GetTexture();
 
-private:
 
+private:
 	ID3D10ShaderResourceView* texture;
 };
 

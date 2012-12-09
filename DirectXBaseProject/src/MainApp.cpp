@@ -65,6 +65,8 @@ private:
 	void drawGrids();
 	void drawModels();
 
+	void addNewPlayer();
+	void updatePlayers(bool asServer);
 private:
 	ID3D10BlendState*		transparentBS;
 
@@ -72,10 +74,12 @@ private:
 	std::list<GameObject*>	gameObjectList;
 	std::list<GameCamera*>	gameCameraList;
 
+	std::vector<ModelObject*> playerList;	//list of players in the game - if any new player joins the game he will be added to this vector
+
 	Light			light[3]; // 0 (parallel), 1 (point), 2 (spot)
 	LIGHT_TYPE		lightType; // 0 (parallel), 1 (point), 2 (spot)
 
-	ModelObject		*model;
+	ModelObject		*player;
 	
 	Grid			*water;
 	Grid			*terrain;
@@ -191,7 +195,7 @@ MainApp::MainApp(HINSTANCE hInstance)
 	light[2].range    = 10000.0f;
 
 	//initialize variables to null
-	model = NULL;
+	player = NULL;
 	terrain = NULL;
 	lightShader = NULL;	
 	texShader = NULL;
@@ -227,6 +231,8 @@ MainApp::~MainApp(){
 		gameObjectList.pop_back();
 	}
 	gameObjectList.clear();
+	
+	playerList.clear();
 
 	//delete every camera object in the list
 	while (!gameCameraList.empty()){
@@ -305,7 +311,7 @@ void MainApp::initServer(){
 		cout << "Server Failed to start" << endl;
 	}
 	else
-		server->SetTarget(model->pos);
+		server->SetTarget(player->pos,player->theta);
 }
 
 void MainApp::initClient(){
@@ -314,7 +320,7 @@ void MainApp::initClient(){
 			cout << "Client failed to start" << endl;
 		}
 		else
-			client->SetClientTarget(model->pos);
+			client->SetTarget(player->pos,player->theta);
 	}
 }
 
@@ -338,23 +344,20 @@ void MainApp::initCameras(){
 void MainApp::initModels(){
 	bool result;
 
-	model = new ModelObject();
+	player = new ModelObject();
 
-	result = model->InitializeWithTexture(md3dDevice,L"assets/models/Grunt/grunt_texture.jpg",NULL);
+	result = player->InitializeWithTexture(md3dDevice,L"assets/models/Grunt/grunt_texture.jpg",NULL);
 
 	if(!result){
 		MessageBox(getMainWnd(), L"Could not initialize the model object.", L"Error", MB_OK);
 	}
 
-	result = model->LoadModelFromFBX("assets/models/Grunt/Grunt.fbx");
+	result = player->LoadModelFromFBX("assets/models/Grunt/Grunt.fbx");
 	if (!result){
 		MessageBox(getMainWnd(), L"Could not load in the FBX object.", L"Error", MB_OK);
 	}
-	gameObjectList.push_back(model);
-	model->pos = Vector3f(0,1.5f,0);
-	/*model2 = new ModelObject(*model);
-	model2->pos = Vector3f(8,7,0);
-	gameObjectList.push_back(model2);*/
+	gameObjectList.push_back(player);
+	player->pos = Vector3f(0,1.5f,0);
 }
 
 void MainApp::initGrids(){
@@ -433,29 +436,22 @@ void MainApp::processInput(float dt){
 	//else if we are using the player camera switch input to player movement
 	else{
 		if (GetAsyncKeyState('W')){
-			model->MoveFacing(10*dt);
-			model->pos.y = terrain->GetHeight(model->pos.x,model->pos.z) + 1.0f;
+			player->MoveFacing(10*dt);
+			player->pos.y = terrain->GetHeight(player->pos.x,player->pos.z) + 1.0f;
 		}
 		if (GetAsyncKeyState('S')){
-			model->MoveFacing(-10*dt);
-			model->pos.y = terrain->GetHeight(model->pos.x,model->pos.z) + 1.0f;
+			player->MoveFacing(-10*dt);
+			player->pos.y = terrain->GetHeight(player->pos.x,player->pos.z) + 1.0f;			
 		}
 		if (GetAsyncKeyState('A')){
-			model->MoveStrafe(-10*dt);
-			model->pos.y = terrain->GetHeight(model->pos.x,model->pos.z) + 1.0f;
+			player->MoveStrafe(-10*dt);
+			player->pos.y = terrain->GetHeight(player->pos.x,player->pos.z) + 1.0f;
 		}
 		if (GetAsyncKeyState('D')){
-			model->MoveStrafe(10*dt);
-			model->pos.y = terrain->GetHeight(model->pos.x,model->pos.z) + 1.0f;
+			player->MoveStrafe(10*dt);
+			player->pos.y = terrain->GetHeight(player->pos.x,player->pos.z) + 1.0f;
 		}
-		playerCamera->SetPosition(model->pos);
-	}
-
-	if (GetAsyncKeyState(VK_UP)){
-		light[0].dir += Vector3f(0,0,0.005f);
-	}
-	if (GetAsyncKeyState(VK_DOWN)){
-		light[0].dir += Vector3f(0,0,-0.005f);
+		playerCamera->SetPosition(player->pos);
 	}
 
 	if (mouseInput)
@@ -469,7 +465,6 @@ void MainApp::processInput(float dt){
 		swapRasterizers();
 		Sleep(100);
 	}
-	
 }
 
 void MainApp::MouseInput(){
@@ -478,8 +473,8 @@ void MainApp::MouseInput(){
 	GetCursorPos(&mousePoint);
 
 	if (mousePoint.x != clickedPoint.x || mousePoint.y != clickedPoint.y){
-		float yaw = (clickedPoint.x - mousePoint.x) * mTimer.getDeltaTime();
-		float pitch = (clickedPoint.y - mousePoint.y) * mTimer.getDeltaTime(); 
+		float yaw = (clickedPoint.x - mousePoint.x) * 0.01f;
+		float pitch = (clickedPoint.y - mousePoint.y) * 0.01f; 
 
 		if (currentCam == godCamera){
 			currentCam->MoveYawPitch(yaw,pitch);
@@ -487,7 +482,7 @@ void MainApp::MouseInput(){
 		else{
 			//if right mouse button is clicked - move model with the mouse
 			if (mouseRightB){
-				model->theta.y -= yaw;	
+				player->theta.y -= yaw;	
 			}
 			currentCam->MoveYawPitch(yaw,pitch);			
 		}
@@ -526,10 +521,20 @@ void MainApp::updateScene(float dt){
 		break;
 	case SERVER:
 		server->Update(dt);
+		if (server->playerJoined){
+			addNewPlayer();
+			server->playerJoined = false;
+		}
+		updatePlayers(true);
 		break;
 	case CLIENT:
 		//send info data to server every 0.1 second
 		client->Update(dt);
+		if (client->playerJoined){
+			addNewPlayer();
+			client->playerJoined = false;
+		}
+		updatePlayers(false);
 		break;
 	}
 	
@@ -591,12 +596,56 @@ void MainApp::drawGrids(){
 
 void MainApp::drawModels(){
 	//Render the Model
-	model->Render(mWVP);
-	texShader->RenderTexturing(md3dDevice,model->GetIndexCount(),model->objMatrix,mView,mProj, model->GetTexMatrix(),currentCam->GetPosition(),light[lightType],model->GetDiffuseTexture(),model->GetSpecularTexture());
+	player->Render(mWVP);
+	texShader->RenderTexturing(md3dDevice,player->GetIndexCount(),player->objMatrix,mView,mProj, player->GetTexMatrix(),currentCam->GetPosition(),light[lightType],player->GetDiffuseTexture(),player->GetSpecularTexture());
+	
+	for (int i = 0; i < playerList.size(); i++){
+		playerList[i]->Render(mWVP);
+		texShader->RenderTexturing(md3dDevice,playerList[i]->GetIndexCount(),playerList[i]->objMatrix,mView,mProj, playerList[i]->GetTexMatrix(),currentCam->GetPosition(),light[lightType],playerList[i]->GetDiffuseTexture(),playerList[i]->GetSpecularTexture());
+	}
+}
 
-	/*model2->Render(mWVP);
-	texShader->RenderTexturing(md3dDevice,model2->GetIndexCount(),model2->objMatrix,mView,mProj,camera->GetPosition(),light[lightType],model2->GetDiffuseTexture(),model2->GetSpecularTexture());*/
+void MainApp::addNewPlayer(){
+	bool result;
 
+	ModelObject *newPlayer = new ModelObject();
+
+	result = newPlayer->InitializeWithTexture(md3dDevice,L"assets/models/Grunt/grunt_texture.jpg",NULL);
+
+	if(!result){
+		MessageBox(getMainWnd(), L"Could not initialize the model object.", L"Error", MB_OK);
+	}
+
+	result = newPlayer->LoadModelFromFBX("assets/models/Grunt/Grunt.fbx");
+	if (!result){
+		MessageBox(getMainWnd(), L"Could not load in the FBX object.", L"Error", MB_OK);
+	}
+	gameObjectList.push_back(newPlayer);
+	newPlayer->pos = Vector3f(0,1.5f,0);
+	playerList.push_back(newPlayer);
+}
+
+
+void MainApp::updatePlayers(bool asServer){
+	if (!asServer){
+		//make sure there is data in the client	
+		if (!client->players){
+			return;
+		}
+		for (int i = 0; i < playerList.size(); i++){
+			playerList[i]->pos = client->players[i].playerData.pos;
+			playerList[i]->theta = client->players[i].playerData.rot;
+		}
+	}
+	else{
+		if (!server->players){
+			return;
+		}
+		for (int i = 0; i < playerList.size(); i++){
+			playerList[i]->pos = server->players[i].playerData.pos;
+			playerList[i]->theta = server->players[i].playerData.rot;
+		}
+	}
 }
 
 void MainApp::animateLights(){

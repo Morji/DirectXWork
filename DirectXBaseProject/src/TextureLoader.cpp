@@ -3,6 +3,7 @@
 
 TextureLoader::TextureLoader(void){
 	texture = NULL;
+	
 }
 
 TextureLoader::~TextureLoader(void){
@@ -20,11 +21,13 @@ bool TextureLoader::Initialize(ID3D10Device* device, WCHAR* filename){
 	return true;
 }
 
-void TextureLoader::Shutdown(){
-	// Release the texture resource.
+bool TextureLoader::Shutdown(){
+	// Release the texture resource.	
 	ReleaseCOM(texture);
-	return;
+	return true;
 }
+
+
 
 ID3D10ShaderResourceView* TextureLoader::GetTexture(){
 	return texture;

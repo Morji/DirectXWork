@@ -1,6 +1,7 @@
 #include "GameObject.h"
 
 
+
 void GameObject::setTrans(D3DXMATRIX worldMatrix){
 	D3DXMATRIX m;
 	D3DXMatrixIdentity(&objMatrix);
@@ -250,12 +251,12 @@ bool GameObject::LoadMultiTexture(WCHAR* specularMapTex, WCHAR* blendMapTex,	WCH
 
 void GameObject::ReleaseTexture(){
 	// Release the texture object.
-	if (diffuseMap)	{diffuseMap->Shutdown();	delete diffuseMap;	diffuseMap = 0;}
-	if (specularMap){specularMap->Shutdown();	delete specularMap; specularMap = 0;}
-	if (blendMap)	{blendMap->Shutdown();		delete blendMap;	blendMap = 0;}
+	if (diffuseMap)	{if (diffuseMap->Shutdown()){	delete diffuseMap;	diffuseMap = 0;}}
+	if (specularMap){if (specularMap->Shutdown()){	delete specularMap; specularMap = 0;}}
+	if (blendMap)	{if (blendMap->Shutdown()){		delete blendMap;	blendMap = 0;}}
 
 	for (int i = 0; i < 3; i++){ 
-		if (diffuseMapRV[i]){diffuseMapRV[i]->Shutdown(); delete diffuseMapRV[i]; diffuseMapRV[i] = 0;}
+		if (diffuseMapRV[i]){if(diffuseMapRV[i]->Shutdown()){ delete diffuseMapRV[i]; diffuseMapRV[i] = 0;}}
 	}
 	
 }
@@ -272,7 +273,6 @@ void GameObject::RenderBuffers(){
 
 	// Set vertex buffer stride and offset.
 	offset = 0;
-    
 	// Set the vertex buffer to active in the input assembler so it can be rendered.
 	md3dDevice->IASetVertexBuffers(0, 1, &mVB, &stride, &offset);
 

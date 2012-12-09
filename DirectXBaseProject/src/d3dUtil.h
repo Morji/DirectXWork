@@ -26,6 +26,14 @@
 #include <crtdbg.h>
 #endif
 
+#if defined(DEBUG) || defined(_DEBUG)
+#pragma comment( lib, "d3dx9d.lib" )
+#pragma comment( lib, "d3dx10d.lib" )
+#else
+#pragma comment( lib, "d3dx9.lib" )
+#pragma comment( lib, "d3dx10.lib" )
+#endif
+
 #include <d3dx10.h>
 #include <dxerr.h>
 #include <cassert>
