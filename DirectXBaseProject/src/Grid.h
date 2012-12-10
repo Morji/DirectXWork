@@ -21,7 +21,7 @@ public:
 
 	float GetHeight(float x, float z);
 
-	void AnimateUV(float dt);
+	void  AnimateUV(float dt);
 
 private:
 	bool InitializeBuffers(DWORD* indices,  VertexNT* vertices);

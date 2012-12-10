@@ -18,10 +18,10 @@ bool TexShader::Initialize(ID3D10Device* device, HWND hwnd, TEXTURETYPE texType)
 	//they initialize the same shader now, but later we will move multitexturing in its own shader
 	switch (texType){
 	case REGULAR:
-		result = InitializeShader(device, hwnd, L"assets/texture.fx");
+		result = InitializeShader(device, hwnd, L"Shaders/texture.fx");
 		break;
 	case MULTI:
-		result = InitializeShader(device, hwnd, L"assets/multitexture.fx");
+		result = InitializeShader(device, hwnd, L"Shaders/multitexture.fx");
 		break;
 	}
 
@@ -38,12 +38,13 @@ void TexShader::RenderTexturing(ID3D10Device* device, int indexCount, D3DXMATRIX
 													  D3DXMATRIX textureMatrix,
 													  D3DXVECTOR3 mEyePos, 
 													  Light lightVar,
+													  int lightType,
 													  ID3D10ShaderResourceView *diffuseMap,
 													  ID3D10ShaderResourceView *specularMap)
 {
 
 	// Set the shader parameters that it will use for rendering.
-	SetShaderParametersTexturing(indexCount, worldMatrix, viewMatrix, projectionMatrix, textureMatrix, mEyePos, lightVar, diffuseMap, specularMap);
+	SetShaderParametersTexturing(indexCount, worldMatrix, viewMatrix, projectionMatrix, textureMatrix, mEyePos, lightVar, lightType, diffuseMap, specularMap);
 
 	// Now render the prepared buffers with the shader.
 	RenderShader(device, indexCount);
@@ -77,17 +78,21 @@ void TexShader::SetShaderParametersTexturing(int indexCount,
 									D3DXMATRIX textureMatrix,
 									D3DXVECTOR3 mEyePos, 
 									Light lightVar,
+									int lightType,
 									ID3D10ShaderResourceView *diffuseMap,
 									ID3D10ShaderResourceView *specularMap)
 {
 
-	Shader::SetShaderParameters(worldMatrix,viewMatrix,projectionMatrix);
+	LightShader::SetShaderParameters(worldMatrix,viewMatrix,projectionMatrix,mEyePos,lightVar,lightType);
 
 	// Set the eye position variable inside the shader
 	mEyePosVar->SetRawValue(&mEyePos, 0, sizeof(D3DXVECTOR3));
 
 	// Set the light variable inside the shader
 	mLightVar->SetRawValue(&lightVar, 0, sizeof(Light));
+
+	// Set the light type inside the shader
+	mLightType->SetInt(lightType);
 
 	// Set the diffuse map shader var
 	mDiffuseMap->SetResource(diffuseMap);
@@ -113,7 +118,7 @@ void TexShader::SetShaderParametersMultiTexturing(int indexCount,
 											int lightType)
 {
 
-	Shader::SetShaderParameters(worldMatrix,viewMatrix,projectionMatrix);
+	LightShader::SetShaderParameters(worldMatrix,viewMatrix,projectionMatrix,mEyePos,lightVar,lightType);
 
 	// Set the eye position variable inside the shader
 	mEyePosVar->SetRawValue(&mEyePos, 0, sizeof(D3DXVECTOR3));
@@ -121,6 +126,7 @@ void TexShader::SetShaderParametersMultiTexturing(int indexCount,
 	// Set the light variable inside the shader
 	mLightVar->SetRawValue(&lightVar, 0, sizeof(Light));
 
+	// Set the light type inside the shader
 	mLightType->SetInt(lightType);
 
 	// Set the diffuse map shader var

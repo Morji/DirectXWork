@@ -15,9 +15,11 @@ public:
 	void Render(ID3D10Device* device, int indexCount, D3DXMATRIX worldMatrix, D3DXMATRIX viewMatrix, D3DXMATRIX projectionMatrix, 
 				D3DXVECTOR3 mEyePos, Light lightVar, int lightType);
 
-	
 
 private:
+	bool InitializeShader(ID3D10Device* device, HWND hwnd, WCHAR* filename);
+
+protected:
 	ID3D10EffectVariable* mEyePosVar;
 	ID3D10EffectVariable* mLightVar;
 	ID3D10EffectScalarVariable* mLightType;	
@@ -25,7 +27,7 @@ private:
 	void SetShaderParameters(D3DXMATRIX worldMatrix, D3DXMATRIX viewMatrix, D3DXMATRIX projectionMatrix,
 							 D3DXVECTOR3 mEyePos, Light lightVar, int lightType);
 
-	bool InitializeShader(ID3D10Device* device, HWND hwnd, WCHAR* filename);
+	
 };
 
 #endif

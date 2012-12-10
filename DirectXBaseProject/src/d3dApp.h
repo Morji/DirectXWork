@@ -39,9 +39,15 @@ public:
 
 	void swapRasterizers();
 
+private:
+	long stop;
+	long remaining;
+
 protected:
 	void initMainWindow();
 	void buildRasterizers();
+	void buildBlendStates();
+	void buildDepthStencilStates();
 	void initDirect3D();
 	
 protected:
@@ -57,25 +63,39 @@ protected:
 
 	std::wstring mFrameStats;
  
-	ID3D10Device*    md3dDevice;
-	IDXGISwapChain*  mSwapChain;
-	ID3D10Texture2D* mDepthStencilBuffer;
-	ID3D10RenderTargetView* mRenderTargetView;
-	ID3D10DepthStencilView* mDepthStencilView;
-	ID3D10RasterizerState* mCurrentRasterizer;
-	ID3D10RasterizerState* mRasterizerSolid;
-	ID3D10RasterizerState* mRasterizerWireframe;
+	ID3D10Device*				md3dDevice;
+
+	IDXGISwapChain*				mSwapChain;
+
+	ID3D10Texture2D*			mDepthStencilBuffer;
+
+	ID3D10RenderTargetView*		mRenderTargetView;
+
+	ID3D10BlendState*			mTransparentBS;
+	ID3D10BlendState*			mDrawReflectionBS;
+
+	ID3D10DepthStencilView*		mDepthStencilView;
+
+	ID3D10DepthStencilState*	mDrawMirrorDSS;
+	ID3D10DepthStencilState*	mDrawReflectionDSS;
+
+	ID3D10RasterizerState*		mCurrentRasterizer;
+	ID3D10RasterizerState*		mRasterizerSolid;
+	ID3D10RasterizerState*		mRasterizerWireframe;
+	ID3D10RasterizerState*		mRasterizerCullCWRS;
+
 	ID3DX10Font* mFont;
 
 	// Derived class should set these in derived constructor to customize starting values.
-	std::wstring mMainWndCaption;
-	D3D10_DRIVER_TYPE md3dDriverType;
-	D3DXCOLOR mClearColor;
-	int mClientWidth;
-	int mClientHeight;
-	POINT	clickedPoint;
-	bool	mouseInput;
-	bool	mouseRightB;	//wether its the right mouse button that is clicked
+	std::wstring		mMainWndCaption;
+	D3D10_DRIVER_TYPE	md3dDriverType;
+	D3DXCOLOR			mClearColor;
+	int					mClientWidth;
+	int					mClientHeight;
+
+	POINT				clickedPoint;
+	bool				mouseInput;
+	bool				mouseRightB;	//wether its the right mouse button that is clicked
 };
 
 

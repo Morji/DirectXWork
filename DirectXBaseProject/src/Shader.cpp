@@ -24,7 +24,7 @@ bool Shader::Initialize(ID3D10Device* device, HWND hwnd)
 	bool result;
 
 	// Initialize the shader that will be used to draw the triangle.
-	result = InitializeShader(device, hwnd, L"assets/color2.fx");
+	result = InitializeShader(device, hwnd, L"Shaders/color2.fx");
 	if(!result){
 		return false;
 	}

@@ -94,6 +94,15 @@ void GameTimer::stop()
 	}
 }
 
+long GameTimer::getCurrTime()const{
+	if( !mStopped ){
+		__int64 currTime;
+		QueryPerformanceCounter((LARGE_INTEGER*)&currTime);
+		return currTime*mSecondsPerCount;
+	}
+	return 0;
+}
+
 void GameTimer::tick()
 {
 	if( mStopped )

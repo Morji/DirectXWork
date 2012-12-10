@@ -32,8 +32,30 @@ bool Server::StartServer(HWND hwnd){
 
 	if (WSAGetLastError() != 0)
 		cout << "Server error message: " << WSAGetLastError() << endl;
+	
+	DisplayServerInfo();
 
 	return true;
+}
+
+void Server::DisplayServerInfo(){
+	//Display IP Address
+	char ac[80];
+	if (gethostname(ac, sizeof(ac)) == SOCKET_ERROR) {
+        cerr << "Error " << WSAGetLastError() <<
+                " when getting local host name." << endl;
+    }
+	struct hostent *phe = gethostbyname(ac);
+	if (phe == 0) {
+        cerr << "Error while looking up host IP address" << endl;
+    }
+	for (int i = 0; phe->h_addr_list[i] != 0; ++i) {
+        struct in_addr addr;
+        memcpy(&addr, phe->h_addr_list[i], sizeof(struct in_addr));
+        cout << "Your IP address is: " << inet_ntoa(addr) << endl;
+    }
+
+	cout << "Your Port Number is: " << SERVERPORT << endl;
 }
 
 void Server::AddClient(ClientInfo &clientInfo){

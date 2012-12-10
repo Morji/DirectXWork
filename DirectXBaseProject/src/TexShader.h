@@ -3,12 +3,12 @@
 
 ///SHADER THAT HANDLES TEXTURING AND MULTITEXTURING
 
-#include "Shader.h"
+#include "LightShader.h"
 #include "Light.h"
 
 enum TEXTURETYPE{REGULAR = 0,MULTI = 1};
 
-class TexShader : public Shader
+class TexShader : public LightShader
 {
 public:
 	TexShader(void);
@@ -22,6 +22,7 @@ public:
 													  D3DXMATRIX textureMatrix,
 													  D3DXVECTOR3 mEyePos, 													  
 													  Light lightVar,
+													  int lightType,
 													  ID3D10ShaderResourceView *diffuseMap,
 													  ID3D10ShaderResourceView *specularMap);
 
@@ -41,9 +42,6 @@ public:
 	~TexShader(void);
 
 private:
-	ID3D10EffectVariable*		mEyePosVar;
-	ID3D10EffectVariable*		mLightVar;
-	ID3D10EffectScalarVariable*	mLightType;
 
 	ID3D10EffectMatrixVariable* mTexMatrix;
 
@@ -61,6 +59,7 @@ private:
 							D3DXMATRIX textureMatrix,
 							D3DXVECTOR3 mEyePos, 
 							Light lightVar,
+							int lightType,
 							ID3D10ShaderResourceView *diffuseMap,
 							ID3D10ShaderResourceView *specularMap);
 

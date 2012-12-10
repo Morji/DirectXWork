@@ -25,6 +25,8 @@ public:
 	void			Update(float dt);
 
 private:
+	void			DisplayServerInfo();
+
 	void			AddClient(ClientInfo &clientInfo);
 	bool			ClientExists(sockaddr_in &identifier);	//checks wether a client with this address exists in the collection of clients
 	void			UpdateServer();

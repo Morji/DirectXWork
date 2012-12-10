@@ -21,6 +21,13 @@ struct VertexC
 	Color		color;
 };
 
+struct VertexNC
+{
+	Vector3f	pos;
+	Vector3f	normal;
+	Color		color;
+};
+
 struct Vertex
 {
 	Vector3f	pos;

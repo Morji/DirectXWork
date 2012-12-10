@@ -31,6 +31,7 @@ MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 D3DApp::D3DApp(HINSTANCE hInstance)
 {
 	mouseInput = mouseRightB = false;
+	stop = remaining = 0;
 	srand ( time(NULL) );//seed the random number generator
 
 	mhAppInst   = hInstance;
@@ -48,6 +49,14 @@ D3DApp::D3DApp(HINSTANCE hInstance)
 	mRenderTargetView   = 0;
 	mDepthStencilView   = 0;
 	mFont               = 0;
+	mDrawReflectionDSS	= 0;
+	mDrawMirrorDSS		= 0;
+	mCurrentRasterizer	= 0;
+	mRasterizerSolid	= 0;
+	mRasterizerWireframe= 0;
+	mRasterizerCullCWRS	= 0;
+	mDrawReflectionBS	= 0;
+	mTransparentBS		= 0;
 
 	mMainWndCaption = L"Val's First DirectX Gig";
 	md3dDriverType  = D3D10_DRIVER_TYPE_HARDWARE;
@@ -64,6 +73,11 @@ D3DApp::~D3DApp()
 	ReleaseCOM(mDepthStencilBuffer);
 	ReleaseCOM(mRasterizerSolid);
 	ReleaseCOM(mRasterizerWireframe);
+	ReleaseCOM(mRasterizerCullCWRS);
+	ReleaseCOM(mTransparentBS);
+	ReleaseCOM(mDrawReflectionBS);
+	ReleaseCOM(mDrawMirrorDSS);
+	ReleaseCOM(mDrawReflectionDSS);
 	ReleaseCOM(md3dDevice);
 	ReleaseCOM(mFont);
 }
@@ -97,12 +111,18 @@ int D3DApp::run()
         {	
 			mTimer.tick();
 
-			if( !mAppPaused )
-				updateScene(mTimer.getDeltaTime());	
+			//artificially limit to 60fps - no need for more
+			stop = mTimer.getCurrTime() + 15;
+			if( !mAppPaused ){
+				updateScene(mTimer.getDeltaTime());
+			}
 			else
 				Sleep(30);
 
 			drawScene();
+			remaining = stop - mTimer.getCurrTime();
+			if (remaining > 0)
+				Sleep(remaining);
         }
     }
 	return (int)msg.wParam;
@@ -113,6 +133,8 @@ void D3DApp::initApp()
 	initMainWindow();
 	initDirect3D();
 	buildRasterizers();
+	buildBlendStates();
+	buildDepthStencilStates();
 
 	D3DX10_FONT_DESC fontDesc;
 	fontDesc.Height          = 24;
@@ -219,6 +241,66 @@ void D3DApp::drawScene()
 	md3dDevice->ClearDepthStencilView(mDepthStencilView, D3D10_CLEAR_DEPTH|D3D10_CLEAR_STENCIL, 1.0f, 0);
 }
 
+void D3DApp::buildDepthStencilStates(){
+	D3D10_DEPTH_STENCIL_DESC dsDesc;
+	dsDesc.DepthEnable = true;
+	dsDesc.DepthWriteMask = D3D10_DEPTH_WRITE_MASK_ALL;
+	dsDesc.DepthFunc = D3D10_COMPARISON_LESS;
+	dsDesc.StencilEnable = true;
+	dsDesc.StencilReadMask = 0xff;
+	dsDesc.StencilWriteMask = 0xff;
+
+	// Always pass the stencil test, and replace the
+	// current stencil value with the stencil reference value 1.
+	dsDesc.FrontFace.StencilFailOp = D3D10_STENCIL_OP_KEEP;
+	dsDesc.FrontFace.StencilDepthFailOp = D3D10_STENCIL_OP_KEEP;
+	dsDesc.FrontFace.StencilPassOp = D3D10_STENCIL_OP_REPLACE;
+	dsDesc.FrontFace.StencilFunc = D3D10_COMPARISON_ALWAYS;
+
+	// We are not rendering backfacing polygons, so these
+	// settings do not matter.
+	dsDesc.BackFace.StencilFailOp = D3D10_STENCIL_OP_KEEP;
+	dsDesc.BackFace.StencilDepthFailOp = D3D10_STENCIL_OP_KEEP;
+	dsDesc.BackFace.StencilPassOp = D3D10_STENCIL_OP_REPLACE;
+	dsDesc.BackFace.StencilFunc = D3D10_COMPARISON_ALWAYS;
+	// Create the depth/stencil state used to draw the mirror
+	// to the stencil buffer.
+	HR(md3dDevice->CreateDepthStencilState(&dsDesc, &mDrawMirrorDSS));
+
+	// Only pass the stencil test if the value in the stencil
+	// buffer equals the stencil reference value.
+	dsDesc.DepthEnable = true;
+	dsDesc.DepthWriteMask = D3D10_DEPTH_WRITE_MASK_ZERO;
+	dsDesc.DepthFunc = D3D10_COMPARISON_ALWAYS;
+	dsDesc.FrontFace.StencilPassOp = D3D10_STENCIL_OP_KEEP;
+	dsDesc.FrontFace.StencilFunc = D3D10_COMPARISON_EQUAL;
+	// Create the depth/stencil state used to draw the reflected
+	// crate to the back buffer.
+	HR(md3dDevice->CreateDepthStencilState(&dsDesc, &mDrawReflectionDSS));
+}
+
+void D3DApp::buildBlendStates(){
+	//create the transparent BS
+	D3D10_BLEND_DESC blendDesc = {0};
+	blendDesc.AlphaToCoverageEnable = false;
+	blendDesc.BlendEnable[0] = true;
+	blendDesc.SrcBlend = D3D10_BLEND_SRC_ALPHA;
+	blendDesc.DestBlend = D3D10_BLEND_INV_SRC_ALPHA;
+	blendDesc.BlendOp = D3D10_BLEND_OP_ADD;
+	blendDesc.SrcBlendAlpha = D3D10_BLEND_ONE;
+	blendDesc.DestBlendAlpha = D3D10_BLEND_ZERO;
+	blendDesc.BlendOpAlpha = D3D10_BLEND_OP_ADD;
+	blendDesc.RenderTargetWriteMask[0] = D3D10_COLOR_WRITE_ENABLE_ALL;
+
+	HR(md3dDevice->CreateBlendState(&blendDesc, &mTransparentBS));
+
+	//create the reflection BS
+	blendDesc.SrcBlend = D3D10_BLEND_BLEND_FACTOR;
+	blendDesc.DestBlend = D3D10_BLEND_INV_BLEND_FACTOR;
+
+	HR(md3dDevice->CreateBlendState(&blendDesc, &mDrawReflectionBS));
+}
+
 void D3DApp::buildRasterizers(){
 
 	//build solid rasterizer
@@ -240,6 +322,13 @@ void D3DApp::buildRasterizers(){
 	rasterizerState.FillMode = D3D10_FILL_WIREFRAME;
 
 	result = md3dDevice->CreateRasterizerState( &rasterizerState, &mRasterizerWireframe);
+
+	D3D10_RASTERIZER_DESC rsDesc;
+	ZeroMemory(&rsDesc, sizeof(D3D10_RASTERIZER_DESC));
+	rsDesc.CullMode = D3D10_CULL_BACK;
+	rsDesc.FillMode = D3D10_FILL_SOLID;
+	rsDesc.FrontCounterClockwise = true;
+	result = md3dDevice->CreateRasterizerState( &rsDesc, &mRasterizerCullCWRS);
 
 	mCurrentRasterizer = mRasterizerSolid;
 }

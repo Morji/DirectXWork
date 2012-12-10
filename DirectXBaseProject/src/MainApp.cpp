@@ -12,11 +12,11 @@
 
 #include "d3dApp.h"
 #include "GameObject.h"
-#include "CubeObject.h"
+#include "Isohedron.h"
 #include "Shader.h"
 #include "GameCamera.h"
 #include "Light.h"
-#include "LightShader.h"
+#include "ExplodeShader.h"
 #include "TexShader.h"
 #include "Grid.h"
 #include "ModelObject.h"
@@ -53,7 +53,6 @@ public:
 	LRESULT msgProc(UINT msg, WPARAM wParam, LPARAM lParam);
 	
 private:
-	void buildTransparentBS();
 	void animateLights();
 	void SwitchCameras();
 	void MouseInput();	
@@ -62,14 +61,13 @@ private:
 	void initGrids();
 	void initShaders();
 
-	void drawGrids();
-	void drawModels();
+	void drawLand(D3DXMATRIX &mWVPMatrix);
+	void drawWater(D3DXMATRIX &mWVPMatrix);
+	void drawModels(D3DXMATRIX &mWVPMatrix);
 
 	void addNewPlayer();
 	void updatePlayers(bool asServer);
 private:
-	ID3D10BlendState*		transparentBS;
-
 	std::list<Shader*>		shaderList;
 	std::list<GameObject*>	gameObjectList;
 	std::list<GameCamera*>	gameCameraList;
@@ -80,6 +78,7 @@ private:
 	LIGHT_TYPE		lightType; // 0 (parallel), 1 (point), 2 (spot)
 
 	ModelObject		*player;
+	Isohedron		*isohedron;
 	
 	Grid			*water;
 	Grid			*terrain;
@@ -90,7 +89,7 @@ private:
 
 	TexShader		*texShader;
 	TexShader		*multiTexShader;
-	LightShader		*lightShader;
+	ExplodeShader	*explodeShader;
 	Shader			*colorShader;
 
 	float			aspectRatio;
@@ -100,7 +99,7 @@ private:
 	D3DXMATRIX		mWVP;
 
 	POINT			mouseLastPoint;
-//server stuff
+//networking components
 private:
 	Server			*server;
 	Client			*client;
@@ -197,10 +196,11 @@ MainApp::MainApp(HINSTANCE hInstance)
 	//initialize variables to null
 	player = NULL;
 	terrain = NULL;
-	lightShader = NULL;	
+	explodeShader = NULL;	
 	texShader = NULL;
 	colorShader = NULL;
 	client =  NULL;
+	isohedron = NULL;
 	server = NULL;
 }
 
@@ -256,21 +256,6 @@ MainApp::~MainApp(){
 	}
 }
 
-void MainApp::buildTransparentBS(){
-	D3D10_BLEND_DESC blendDesc = {0};
-	blendDesc.AlphaToCoverageEnable = false;
-	blendDesc.BlendEnable[0] = true;
-	blendDesc.SrcBlend = D3D10_BLEND_SRC_ALPHA;
-	blendDesc.DestBlend = D3D10_BLEND_INV_SRC_ALPHA;
-	blendDesc.BlendOp = D3D10_BLEND_OP_ADD;
-	blendDesc.SrcBlendAlpha = D3D10_BLEND_ONE;
-	blendDesc.DestBlendAlpha = D3D10_BLEND_ZERO;
-	blendDesc.BlendOpAlpha = D3D10_BLEND_OP_ADD;
-	blendDesc.RenderTargetWriteMask[0] = D3D10_COLOR_WRITE_ENABLE_ALL;
-
-	HR(md3dDevice->CreateBlendState(&blendDesc, &transparentBS));
-}
-
 void MainApp::initGame(){
 	char decision;
 	cout << "Welcome to Val's very first DirectX and Server gig" << endl;
@@ -294,15 +279,11 @@ void MainApp::initGame(){
 	}
 }
 
-void MainApp::initApp(){	
-	buildTransparentBS();
-
+void MainApp::initApp(){
 	initCameras();
 	initModels();
 	initGrids();
-	initShaders();	
-
-	
+	initShaders();		
 }
 
 void MainApp::initServer(){
@@ -344,6 +325,16 @@ void MainApp::initCameras(){
 void MainApp::initModels(){
 	bool result;
 
+	isohedron = new Isohedron();
+
+	result = isohedron->Initialize(md3dDevice);
+	if (!result){
+		MessageBox(getMainWnd(), L"Could not initialize the isohedron object.", L"Error", MB_OK);
+	}
+	isohedron->pos = Vector3f(-12,5,-30);
+	isohedron->scale = Vector3f(5,5,5);
+	gameObjectList.push_back(isohedron);
+
 	player = new ModelObject();
 
 	result = player->InitializeWithTexture(md3dDevice,L"assets/models/Grunt/grunt_texture.jpg",NULL);
@@ -365,13 +356,13 @@ void MainApp::initGrids(){
 	bool result;
 
 	terrain = new Grid();
-	result = terrain->InitializeWithMultiTexture(md3dDevice,L"assets/defaultspec.dds", NULL,L"assets/stone2.dds",
-																						 L"assets/ground0.dds",
-																						 L"assets/grass0.dds");
+	result = terrain->InitializeWithMultiTexture(md3dDevice,L"assets/textures/defaultspec.dds", NULL,L"assets/textures/stone2.dds",
+																						 L"assets/textures/ground0.dds",
+																						 L"assets/textures/grass0.dds");
 	if(!result){
 		MessageBox(getMainWnd(), L"Could not initialize the terrain object.", L"Error", MB_OK);
 	}
-	result = terrain->GenerateGridFromTGA("assets/heightmap.tga");
+	result = terrain->GenerateGridFromTGA("assets/maps/heightmap.tga");
 	if(!result){
 		MessageBox(getMainWnd(), L"Could properly generate heightmap.", L"Error", MB_OK);
 	}
@@ -379,7 +370,7 @@ void MainApp::initGrids(){
 
 	//initialize the water
 	water = new Grid();
-	result = water->InitializeWithTexture(md3dDevice,L"assets/water.jpg",L"assets/waterAlpha.png");
+	result = water->InitializeWithTexture(md3dDevice,L"assets/textures/water.jpg",L"assets/maps/waterAlpha.png");
 	if(!result){
 		MessageBox(getMainWnd(), L"Could not initialize the water object.", L"Error", MB_OK);
 	}
@@ -410,6 +401,14 @@ void MainApp::initShaders(){
 	}
 
 	shaderList.push_back(multiTexShader);
+
+	explodeShader = new ExplodeShader();
+	result = explodeShader->Initialize(md3dDevice,getMainWnd());
+	if(!result){
+		MessageBox(getMainWnd(), L"Could not initialize the explode shader object.", L"Error", MB_OK);
+	}
+
+	shaderList.push_back(explodeShader);
 }
 
 ///Any input key processing - to it here
@@ -560,11 +559,13 @@ void MainApp::drawScene(){
 	currentCam->Render();
 
 	// Get the world, view, and projection matrices from the camera and d3d objects.
-	currentCam->GetViewMatrix(mView);
+	currentCam->GetViewMatrix(mView);	
 	
-	drawModels();	
+	drawModels(mWVP);	
 
-	drawGrids();
+	drawLand(mWVP);
+
+	drawWater(mWVP);
 	
 	// We specify DT_NOCLIP, so we do not care about width/height of the rect.
 	RECT R = {5, 5, 0, 0};
@@ -574,9 +575,9 @@ void MainApp::drawScene(){
 	mSwapChain->Present(0, 0);
 }
 
-void MainApp::drawGrids(){
+void MainApp::drawLand(D3DXMATRIX &mWVPMatrix){
 	//draw the terrain
-	terrain->Render(mWVP);
+	terrain->Render(mWVPMatrix);
 	multiTexShader->RenderMultiTexturing(md3dDevice,terrain->GetIndexCount(),terrain->objMatrix,mView,mProj,currentCam->GetPosition(),light[lightType],
 																															 terrain->GetSpecularTexture(),
 																															 NULL,
@@ -585,24 +586,57 @@ void MainApp::drawGrids(){
 																															 terrain->GetDiffuseMap(2),
 																															 terrain->GetMaxHeight(),
 																															 lightType);
-	//get some blending going on
-	float blendFactors[] = {0.0f, 0.0f, 0.0f, 0.0f};
-	md3dDevice->OMSetBlendState(transparentBS, blendFactors, 0xffffffff);
-	//draw the water
-	water->Render(mWVP);
-	texShader->RenderTexturing(md3dDevice,water->GetIndexCount(),water->objMatrix,mView,mProj, water->GetTexMatrix(), currentCam->GetPosition(), light[lightType],water->GetDiffuseTexture(),water->GetSpecularTexture());
-
 }
 
-void MainApp::drawModels(){
+void MainApp::drawWater(D3DXMATRIX &mWVPMatrix){
+	//get some blending going on
+	float blendFactors[] = {0.0f, 0.0f, 0.0f, 0.0f};
+	md3dDevice->OMSetBlendState(mTransparentBS, blendFactors, 0xffffffff);
+	md3dDevice->OMSetDepthStencilState(mDrawMirrorDSS, 1);	
+
+	//draw the water
+	water->Render(mWVPMatrix);
+	texShader->RenderTexturing(md3dDevice,water->GetIndexCount(),water->objMatrix,mView,mProj, water->GetTexMatrix(), currentCam->GetPosition(), light[lightType], lightType, water->GetDiffuseTexture(),water->GetSpecularTexture());
+
+	md3dDevice->OMSetDepthStencilState(0, 0);
+
+	//draw reflected models in water
+	__declspec( align ( 16 ) ) D3DXPLANE mirrorPlane(0.0f, 1.0f, 0.0f, 0.0f); // xz plane
+	__declspec( align ( 16 ) ) D3DXMATRIX reflectedWorld;
+	D3DXMatrixReflect(&reflectedWorld, &mirrorPlane);
+
+	// Reflect the light source as well.
+	D3DXVECTOR3 oldDir = light[lightType].dir;
+	D3DXVec3TransformNormal(&light[lightType].dir, &light[lightType].dir, &reflectedWorld);
+	
+	md3dDevice->RSSetState(mRasterizerCullCWRS);
+	float blendf[] = {0.35f, 0.35f, 0.35f, 1.0f};
+	md3dDevice->OMSetBlendState(mDrawReflectionBS, blendf, 0xffffffff);
+
+	md3dDevice->OMSetDepthStencilState(mDrawReflectionDSS, 1);
+
+	drawModels(reflectedWorld);
+
+	md3dDevice->OMSetDepthStencilState(0, 0);
+
+	md3dDevice->OMSetBlendState(0, blendf, 0xffffffff);
+	md3dDevice->RSSetState(0);
+	light[lightType].dir = oldDir; // restore
+}
+
+void MainApp::drawModels(D3DXMATRIX &mWVPMatrix){
 	//Render the Model
-	player->Render(mWVP);
-	texShader->RenderTexturing(md3dDevice,player->GetIndexCount(),player->objMatrix,mView,mProj, player->GetTexMatrix(),currentCam->GetPosition(),light[lightType],player->GetDiffuseTexture(),player->GetSpecularTexture());
+	player->Render(mWVPMatrix);
+	texShader->RenderTexturing(md3dDevice,player->GetIndexCount(),player->objMatrix,mView,mProj, player->GetTexMatrix(),currentCam->GetPosition(),light[lightType],lightType,player->GetDiffuseTexture(),player->GetSpecularTexture());
 	
 	for (int i = 0; i < playerList.size(); i++){
-		playerList[i]->Render(mWVP);
-		texShader->RenderTexturing(md3dDevice,playerList[i]->GetIndexCount(),playerList[i]->objMatrix,mView,mProj, playerList[i]->GetTexMatrix(),currentCam->GetPosition(),light[lightType],playerList[i]->GetDiffuseTexture(),playerList[i]->GetSpecularTexture());
+		playerList[i]->Render(mWVPMatrix);
+		texShader->RenderTexturing(md3dDevice,playerList[i]->GetIndexCount(),playerList[i]->objMatrix,mView,mProj, playerList[i]->GetTexMatrix(),currentCam->GetPosition(),light[lightType],lightType,playerList[i]->GetDiffuseTexture(),playerList[i]->GetSpecularTexture());
 	}
+
+	isohedron->Render(mWVPMatrix);
+	isohedron->theta += Vector3f(0,0.01f,0);
+	explodeShader->Render(md3dDevice,isohedron->GetIndexCount(),isohedron->objMatrix,mView,mProj,currentCam->GetPosition(),light[lightType],lightType);
 }
 
 void MainApp::addNewPlayer(){
@@ -624,7 +658,6 @@ void MainApp::addNewPlayer(){
 	newPlayer->pos = Vector3f(0,1.5f,0);
 	playerList.push_back(newPlayer);
 }
-
 
 void MainApp::updatePlayers(bool asServer){
 	if (!asServer){

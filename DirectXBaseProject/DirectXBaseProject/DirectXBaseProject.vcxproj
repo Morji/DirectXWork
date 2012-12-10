@@ -15,12 +15,14 @@
     <ClCompile Include="..\src\console.cpp" />
     <ClCompile Include="..\src\CubeObject.cpp" />
     <ClCompile Include="..\src\d3dApp.cpp" />
+    <ClCompile Include="..\src\ExplodeShader.cpp" />
     <ClCompile Include="..\src\GameCamera.cpp" />
     <ClCompile Include="..\src\GameEntity.cpp" />
     <ClCompile Include="..\src\GameObject.cpp" />
     <ClCompile Include="..\src\GameTimer.cpp" />
     <ClCompile Include="..\src\Grid.cpp" />
     <ClCompile Include="..\src\hsfsocket.cpp" />
+    <ClCompile Include="..\src\Isohedron.cpp" />
     <ClCompile Include="..\src\LightShader.cpp" />
     <ClCompile Include="..\src\MainApp.cpp" />
     <ClCompile Include="..\src\ModelLoader.cpp" />
@@ -38,12 +40,14 @@
     <ClInclude Include="..\src\CubeObject.h" />
     <ClInclude Include="..\src\d3dApp.h" />
     <ClInclude Include="..\src\d3dUtil.h" />
+    <ClInclude Include="..\src\ExplodeShader.h" />
     <ClInclude Include="..\src\GameCamera.h" />
     <ClInclude Include="..\src\GameEntity.h" />
     <ClInclude Include="..\src\GameObject.h" />
     <ClInclude Include="..\src\GameTimer.h" />
     <ClInclude Include="..\src\Grid.h" />
     <ClInclude Include="..\src\hsfsocket.h" />
+    <ClInclude Include="..\src\Isohedron.h" />
     <ClInclude Include="..\src\Light.h" />
     <ClInclude Include="..\src\LightShader.h" />
     <ClInclude Include="..\src\ModelLoader.h" />
@@ -59,12 +63,13 @@
     <ClInclude Include="..\src\Vertex.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="assets\color.fx" />
-    <None Include="assets\color2.fx" />
-    <None Include="assets\lighthelper.fx" />
-    <None Include="assets\lighting.fx" />
-    <None Include="assets\multitexture.fx" />
-    <None Include="assets\texture.fx" />
+    <None Include="Shaders\color.fx" />
+    <None Include="Shaders\color2.fx" />
+    <None Include="Shaders\explodegeometry.fx" />
+    <None Include="Shaders\lighthelper.fx" />
+    <None Include="Shaders\lighting.fx" />
+    <None Include="Shaders\multitexture.fx" />
+    <None Include="Shaders\texture.fx" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{5EC429A2-BECA-4986-878A-53142CD976FF}</ProjectGuid>

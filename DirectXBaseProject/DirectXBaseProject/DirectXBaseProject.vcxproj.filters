@@ -114,6 +114,12 @@
     <ClCompile Include="..\src\GameEntity.cpp">
       <Filter>Source Files\GameEntities</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\Isohedron.cpp">
+      <Filter>Source Files\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ExplodeShader.cpp">
+      <Filter>Source Files\Shaders</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\d3dApp.h">
@@ -188,24 +194,33 @@
     <ClInclude Include="..\src\GameEntity.h">
       <Filter>Header Files\GameEntities</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\Isohedron.h">
+      <Filter>Header Files\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ExplodeShader.h">
+      <Filter>Header Files\Shaders</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="assets\color.fx">
+    <None Include="Shaders\color.fx">
       <Filter>Effect Files</Filter>
     </None>
-    <None Include="assets\texture.fx">
+    <None Include="Shaders\color2.fx">
       <Filter>Effect Files</Filter>
     </None>
-    <None Include="assets\color2.fx">
+    <None Include="Shaders\lighthelper.fx">
       <Filter>Effect Files</Filter>
     </None>
-    <None Include="assets\lighthelper.fx">
+    <None Include="Shaders\lighting.fx">
       <Filter>Effect Files</Filter>
     </None>
-    <None Include="assets\lighting.fx">
+    <None Include="Shaders\multitexture.fx">
       <Filter>Effect Files</Filter>
     </None>
-    <None Include="assets\multitexture.fx">
+    <None Include="Shaders\texture.fx">
+      <Filter>Effect Files</Filter>
+    </None>
+    <None Include="Shaders\explodegeometry.fx">
       <Filter>Effect Files</Filter>
     </None>
   </ItemGroup>

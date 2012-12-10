@@ -13,6 +13,8 @@ public:
 
 	float getGameTime()const;  // in seconds
 	float getDeltaTime()const; // in seconds
+	
+	long  getCurrTime()const;  // in millis
 
 	void reset(); // Call before message loop.
 	void start(); // Call when unpaused.

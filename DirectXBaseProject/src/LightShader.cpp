@@ -23,14 +23,7 @@ void LightShader::Render(ID3D10Device* device, int indexCount, D3DXMATRIX worldM
 void LightShader::SetShaderParameters(D3DXMATRIX worldMatrix, D3DXMATRIX viewMatrix, D3DXMATRIX projectionMatrix,
 									  D3DXVECTOR3 mEyePos, Light lightVar, int lightType){
 
-	// Set the world matrix variable inside the shader.
-	mWorldMatrix->SetMatrix((float*)&worldMatrix);
-
-	// Set the view matrix variable inside the shader.
-	mViewMatrix->SetMatrix((float*)&viewMatrix);
-
-	// Set the projection matrix variable inside the shader.
-	mProjectionMatrix->SetMatrix((float*)&projectionMatrix);
+	Shader::SetShaderParameters(worldMatrix,viewMatrix,projectionMatrix);
 
 	// Set the eye position variable inside the shader
 	mEyePosVar->SetRawValue(&mEyePos, 0, sizeof(D3DXVECTOR3));
@@ -48,7 +41,7 @@ bool LightShader::Initialize(ID3D10Device* device, HWND hwnd){
 	bool result;
 
 	// Initialize the shader that will be used to draw the triangle.
-	result = InitializeShader(device, hwnd, L"assets/lighting.fx");
+	result = InitializeShader(device, hwnd, L"Shaders/lighting.fx");
 	if(!result){
 		return false;
 	}
