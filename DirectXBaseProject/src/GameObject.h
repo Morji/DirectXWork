@@ -27,15 +27,15 @@ public:
 public:
 	GameObject(): mVertexCount(0), mIndexCount(0), mNumFaces(0), md3dDevice(0), mVB(0), mIB(0), scale(1,1,1),pos(0,0,0),theta(0,0,0)
 	{
+		referenceCount = 0;
 		diffuseMap = specularMap = blendMap = 0;
 		for (int i = 0; i < 3; i++) diffuseMapRV[i] = 0;
 		D3DXMatrixIdentity(&mTexMatrix);
 	}
 
 
-	virtual ~GameObject()
-	{
-		Shutdown();
+	virtual ~GameObject(){		
+		Shutdown();		
 	}	
 
 	void MoveFacing(float speed);	//moves the object towards(or away from if speed < 0) the direction it is facing
@@ -48,8 +48,9 @@ public:
 	bool InitializeWithMultiTexture(ID3D10Device* device, WCHAR* specularMapTex, WCHAR* blendMapTex, WCHAR* diffuseMapRV1Tex,
 																									 WCHAR* diffuseMapRV2Tex,
 																									 WCHAR* diffuseMapRV3Tex);
-	
-	void Shutdown();
+	void AddReference();
+	int			referenceCount;
+	bool Shutdown();
 	void Render(D3DXMATRIX worldMatrix);
 
 	ID3D10ShaderResourceView* GetDiffuseTexture();
@@ -66,6 +67,7 @@ private:
 	void ShutdownBuffers();
 	void RenderBuffers();
 	void setTrans(D3DXMATRIX worldMatrix);
+	
 	
 
 	TextureLoader* specularMap;

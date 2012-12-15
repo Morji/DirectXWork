@@ -10,10 +10,13 @@ public:
 	ModelObject(void);
 	~ModelObject(void);
 
+	
+
 	bool LoadModelFromFBX(const char* filename);
 
 private:
 	ModelLoader *modelLoader;
+
 };
 
 

@@ -2,11 +2,63 @@
 
 
 Isohedron::Isohedron(void){
+	explosiveForce = 0;
+	explosiveRate = 0;
+	isExploding = false;
+	isResetting = false;
 }
 
 
 Isohedron::~Isohedron(void){
 	Shutdown();
+}
+
+void Isohedron::Render(D3DXMATRIX worldMatrix){
+	GameObject::Render(worldMatrix);
+
+	if (isExploding){
+		Explode();
+	}
+}
+
+void Isohedron::Reset(){
+	isResetting = true;
+}
+
+float Isohedron::GetExplosiveForce(){
+	return explosiveForce;
+}
+
+bool Isohedron::IsExploding(){
+	return isExploding;
+}
+
+void Isohedron::StartExplosion(float rate){
+	explosiveRate = rate;
+	isResetting = false;
+	isExploding = true;
+}
+
+void Isohedron::StopExplosion(){
+	explosiveForce = 0;
+	explosiveRate = 0;
+	isResetting = false;
+	isExploding = false;
+}
+
+void Isohedron::Explode(){
+	if (isResetting){
+		if (explosiveForce > 0)
+			explosiveForce -= explosiveRate;
+		else if (explosiveForce < 0)
+			explosiveForce = 0;
+	}
+	else{
+		explosiveForce += explosiveRate;
+		if (explosiveForce >= EXPLOSION_LIMIT){
+			StopExplosion();
+		}
+	}
 }
 
 bool Isohedron::SetupArraysAndInitBuffers(){

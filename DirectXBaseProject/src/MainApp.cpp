@@ -23,6 +23,7 @@
 #include "console.h"
 #include "Server.h"
 #include "Client.h"
+#include "GameEntity.h"
 #include <list>
 
 using namespace std;
@@ -77,7 +78,8 @@ private:
 	Light			light[3]; // 0 (parallel), 1 (point), 2 (spot)
 	LIGHT_TYPE		lightType; // 0 (parallel), 1 (point), 2 (spot)
 
-	ModelObject		*player;
+	GameEntity		*player;
+	//ModelObject		*player;
 	Isohedron		*isohedron;
 	
 	Grid			*water;
@@ -224,7 +226,11 @@ MainApp::~MainApp(){
 	while (!gameObjectList.empty()){
 		GameObject* object = gameObjectList.back();
 		if (object){
-			object->Shutdown();
+			if (object->referenceCount == 0){
+				object->Shutdown();
+			}
+			else
+				object->referenceCount--;
 			delete object;
 			object = nullptr;
 		}
@@ -244,6 +250,11 @@ MainApp::~MainApp(){
 		gameCameraList.pop_back();
 	}
 	gameCameraList.clear();
+
+	if (player){
+		delete player;
+		player = nullptr;
+	}
 
 	if (server){
 		delete server;
@@ -281,8 +292,8 @@ void MainApp::initGame(){
 
 void MainApp::initApp(){
 	initCameras();
-	initModels();
 	initGrids();
+	initModels();	
 	initShaders();		
 }
 
@@ -292,7 +303,7 @@ void MainApp::initServer(){
 		cout << "Server Failed to start" << endl;
 	}
 	else
-		server->SetTarget(player->pos,player->theta);
+		server->SetTarget(player->GetGameObject()->pos,player->GetGameObject()->theta);
 }
 
 void MainApp::initClient(){
@@ -301,7 +312,7 @@ void MainApp::initClient(){
 			cout << "Client failed to start" << endl;
 		}
 		else
-			client->SetTarget(player->pos,player->theta);
+			client->SetTarget(player->GetGameObject()->pos,player->GetGameObject()->theta);
 	}
 }
 
@@ -335,20 +346,30 @@ void MainApp::initModels(){
 	isohedron->scale = Vector3f(5,5,5);
 	gameObjectList.push_back(isohedron);
 
-	player = new ModelObject();
+	ModelObject *model = new ModelObject();
 
-	result = player->InitializeWithTexture(md3dDevice,L"assets/models/Grunt/grunt_texture.jpg",NULL);
+	result = model->InitializeWithTexture(md3dDevice,L"assets/models/Grunt/grunt_texture.jpg",NULL);
 
 	if(!result){
 		MessageBox(getMainWnd(), L"Could not initialize the model object.", L"Error", MB_OK);
 	}
 
-	result = player->LoadModelFromFBX("assets/models/Grunt/Grunt.fbx");
+	result = model->LoadModelFromFBX("assets/models/Grunt/Grunt.fbx");
 	if (!result){
 		MessageBox(getMainWnd(), L"Could not load in the FBX object.", L"Error", MB_OK);
 	}
-	gameObjectList.push_back(player);
-	player->pos = Vector3f(0,1.5f,0);
+	gameObjectList.push_back(model);
+	model->pos = Vector3f(0,1.5f,0);
+
+	ModelObject *copy = new ModelObject(*model);
+	model->AddReference();
+	copy->pos = Vector3f(4,1.5f,5);
+	gameObjectList.push_back(copy);
+	playerList.push_back(copy);
+
+	player = new GameEntity(*model);
+	player->SetBall(*isohedron);
+	player->SetTerrainRef(*terrain);
 }
 
 void MainApp::initGrids(){
@@ -435,22 +456,22 @@ void MainApp::processInput(float dt){
 	//else if we are using the player camera switch input to player movement
 	else{
 		if (GetAsyncKeyState('W')){
-			player->MoveFacing(10*dt);
-			player->pos.y = terrain->GetHeight(player->pos.x,player->pos.z) + 1.0f;
+			player->GetGameObject()->MoveFacing(10*dt);
+			player->pos->y = terrain->GetHeight(player->pos->x,player->pos->z) + 1.0f;
 		}
 		if (GetAsyncKeyState('S')){
-			player->MoveFacing(-10*dt);
-			player->pos.y = terrain->GetHeight(player->pos.x,player->pos.z) + 1.0f;			
+			player->GetGameObject()->MoveFacing(-10*dt);
+			player->pos->y = terrain->GetHeight(player->pos->x,player->pos->z) + 1.0f;		
 		}
 		if (GetAsyncKeyState('A')){
-			player->MoveStrafe(-10*dt);
-			player->pos.y = terrain->GetHeight(player->pos.x,player->pos.z) + 1.0f;
+			player->GetGameObject()->MoveStrafe(-10*dt);
+			player->pos->y = terrain->GetHeight(player->pos->x,player->pos->z) + 1.0f;
 		}
 		if (GetAsyncKeyState('D')){
-			player->MoveStrafe(10*dt);
-			player->pos.y = terrain->GetHeight(player->pos.x,player->pos.z) + 1.0f;
+			player->GetGameObject()->MoveStrafe(10*dt);
+			player->pos->y = terrain->GetHeight(player->pos->x,player->pos->z) + 1.0f;
 		}
-		playerCamera->SetPosition(player->pos);
+		playerCamera->SetPosition(*player->pos);
 	}
 
 	if (mouseInput)
@@ -458,6 +479,27 @@ void MainApp::processInput(float dt){
 
 	if ((GetAsyncKeyState(VK_SHIFT) & 0x8000)){
 		SwitchCameras();
+	}
+
+	if ((GetAsyncKeyState(VK_RETURN) & 0x8000)){
+		isohedron->StartExplosion(0.1f);
+	}
+
+	if ((GetAsyncKeyState(VK_SPACE) & 0x8000)){
+		if (isohedron->IsExploding()){
+			isohedron->Reset();
+		}
+	}
+
+	if ((GetAsyncKeyState('F') & 0x8000)){
+		player->PrimeBall();
+	}
+	else if (player->IsBallPrimed()){
+		player->FireBall();
+	}
+
+	if ((GetAsyncKeyState('G') & 0x8000)){
+		player->RetrieveBall();
 	}
 
 	if (GetAsyncKeyState('B')){
@@ -481,7 +523,7 @@ void MainApp::MouseInput(){
 		else{
 			//if right mouse button is clicked - move model with the mouse
 			if (mouseRightB){
-				player->theta.y -= yaw;	
+				player->theta->y -= yaw;	
 			}
 			currentCam->MoveYawPitch(yaw,pitch);			
 		}
@@ -536,7 +578,7 @@ void MainApp::updateScene(float dt){
 		updatePlayers(false);
 		break;
 	}
-	
+	player->Update(dt);
 	processInput(dt);
 	D3DApp::updateScene(dt);
 	animateLights();
@@ -608,7 +650,7 @@ void MainApp::drawWater(D3DXMATRIX &mWVPMatrix){
 	// Reflect the light source as well.
 	D3DXVECTOR3 oldDir = light[lightType].dir;
 	D3DXVec3TransformNormal(&light[lightType].dir, &light[lightType].dir, &reflectedWorld);
-	
+
 	md3dDevice->RSSetState(mRasterizerCullCWRS);
 	float blendf[] = {0.35f, 0.35f, 0.35f, 1.0f};
 	md3dDevice->OMSetBlendState(mDrawReflectionBS, blendf, 0xffffffff);
@@ -626,17 +668,15 @@ void MainApp::drawWater(D3DXMATRIX &mWVPMatrix){
 
 void MainApp::drawModels(D3DXMATRIX &mWVPMatrix){
 	//Render the Model
-	player->Render(mWVPMatrix);
-	texShader->RenderTexturing(md3dDevice,player->GetIndexCount(),player->objMatrix,mView,mProj, player->GetTexMatrix(),currentCam->GetPosition(),light[lightType],lightType,player->GetDiffuseTexture(),player->GetSpecularTexture());
+	player->GetGameObject()->Render(mWVPMatrix);
+	texShader->RenderTexturing(md3dDevice,player->GetGameObject()->GetIndexCount(),player->GetGameObject()->objMatrix,mView,mProj, player->GetGameObject()->GetTexMatrix(),currentCam->GetPosition(),light[lightType],lightType,player->GetGameObject()->GetDiffuseTexture(),player->GetGameObject()->GetSpecularTexture());
 	
 	for (int i = 0; i < playerList.size(); i++){
 		playerList[i]->Render(mWVPMatrix);
 		texShader->RenderTexturing(md3dDevice,playerList[i]->GetIndexCount(),playerList[i]->objMatrix,mView,mProj, playerList[i]->GetTexMatrix(),currentCam->GetPosition(),light[lightType],lightType,playerList[i]->GetDiffuseTexture(),playerList[i]->GetSpecularTexture());
 	}
-
 	isohedron->Render(mWVPMatrix);
-	isohedron->theta += Vector3f(0,0.01f,0);
-	explodeShader->Render(md3dDevice,isohedron->GetIndexCount(),isohedron->objMatrix,mView,mProj,currentCam->GetPosition(),light[lightType],lightType);
+	explodeShader->Render(md3dDevice,isohedron->GetIndexCount(),isohedron->objMatrix,mView,mProj,currentCam->GetPosition(),light[lightType],lightType,isohedron->GetExplosiveForce());
 }
 
 void MainApp::addNewPlayer(){

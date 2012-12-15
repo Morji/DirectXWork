@@ -5,7 +5,6 @@
 ModelObject::ModelObject(void){
 }
 
-
 ModelObject::~ModelObject(void){	
 	Shutdown();
 	if (modelLoader){

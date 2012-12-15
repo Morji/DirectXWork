@@ -59,6 +59,7 @@ protected:
 	bool      mMaximized;
 	bool      mResizing;
 
+	D3D10_VIEWPORT vp;
 	GameTimer mTimer;
 
 	std::wstring mFrameStats;
@@ -81,6 +82,7 @@ protected:
 
 	ID3D10RasterizerState*		mCurrentRasterizer;
 	ID3D10RasterizerState*		mRasterizerSolid;
+	ID3D10RasterizerState*		mDynamicRasterizer;
 	ID3D10RasterizerState*		mRasterizerWireframe;
 	ID3D10RasterizerState*		mRasterizerCullCWRS;
 

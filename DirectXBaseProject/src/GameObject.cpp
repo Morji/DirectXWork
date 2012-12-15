@@ -1,6 +1,8 @@
 #include "GameObject.h"
 
-
+void GameObject::AddReference(){
+	referenceCount++;
+}
 
 void GameObject::setTrans(D3DXMATRIX worldMatrix){
 	D3DXMATRIX m;
@@ -83,12 +85,18 @@ bool GameObject::InitializeWithMultiTexture(ID3D10Device* device, WCHAR* specula
 }
 
 //The Shutdown function will call the shutdown functions for the vertex and index buffers.
-void GameObject::Shutdown(){
+bool GameObject::Shutdown(){
 	// Release the model texture.
-	ReleaseTexture();
+	if (referenceCount == 0){
+		ReleaseTexture();
 
-	// Release the vertex and index buffers.
-	ShutdownBuffers();
+		// Release the vertex and index buffers.
+		ShutdownBuffers();
+
+		//return true;
+	}
+	referenceCount--;
+	return true;
 }
 
 //Render is called from the GraphicsClass::Render function. This function calls RenderBuffers to put the vertex and index buffers on the graphics pipeline so the color shader will be able to render them.

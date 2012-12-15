@@ -196,7 +196,6 @@ void D3DApp::onResize()
 
 	// Set the viewport transform.
 
-	D3D10_VIEWPORT vp;
 	vp.TopLeftX = 0;
 	vp.TopLeftY = 0;
 	vp.Width    = mClientWidth;
