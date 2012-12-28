@@ -65,21 +65,18 @@ private:
 	void drawLand(D3DXMATRIX &mWVPMatrix);
 	void drawWater(D3DXMATRIX &mWVPMatrix);
 	void drawModels(D3DXMATRIX &mWVPMatrix);
-
-	void addNewPlayer();
-	void updatePlayers(bool asServer);
 private:
 	std::list<Shader*>		shaderList;
 	std::list<GameObject*>	gameObjectList;
 	std::list<GameCamera*>	gameCameraList;
 
-	std::vector<ModelObject*> playerList;	//list of players in the game - if any new player joins the game he will be added to this vector
+	std::vector<ModelObject*> *playerList;	// a list of players in the game - supplied by network controller
 
 	Light			light[3]; // 0 (parallel), 1 (point), 2 (spot)
 	LIGHT_TYPE		lightType; // 0 (parallel), 1 (point), 2 (spot)
 
 	GameEntity		*player;
-	//ModelObject		*player;
+	ModelObject		*baseModel;
 	Isohedron		*isohedron;
 	
 	Grid			*water;
@@ -204,6 +201,7 @@ MainApp::MainApp(HINSTANCE hInstance)
 	client =  NULL;
 	isohedron = NULL;
 	server = NULL;
+	playerList = NULL;
 }
 
 MainApp::~MainApp(){
@@ -226,11 +224,6 @@ MainApp::~MainApp(){
 	while (!gameObjectList.empty()){
 		GameObject* object = gameObjectList.back();
 		if (object){
-			if (object->referenceCount == 0){
-				object->Shutdown();
-			}
-			else
-				object->referenceCount--;
 			delete object;
 			object = nullptr;
 		}
@@ -238,7 +231,7 @@ MainApp::~MainApp(){
 	}
 	gameObjectList.clear();
 	
-	playerList.clear();
+	playerList = nullptr;
 
 	//delete every camera object in the list
 	while (!gameCameraList.empty()){
@@ -301,18 +294,23 @@ void MainApp::initServer(){
 	server = new Server();
 	if (!server->StartServer(getMainWnd())){
 		cout << "Server Failed to start" << endl;
+		return;
 	}
-	else
-		server->SetTarget(player->GetGameObject()->pos,player->GetGameObject()->theta);
+	server->SetTarget(player->GetGameObject()->pos,player->GetGameObject()->theta);	
+	server->InitNetworkController(baseModel,&gameObjectList);
+
+	playerList = server->GetPlayerList();
 }
 
 void MainApp::initClient(){
 	if (client){
 		if (!client->Initialize(getMainWnd())){
 			cout << "Client failed to start" << endl;
+			return;
 		}
-		else
-			client->SetTarget(player->GetGameObject()->pos,player->GetGameObject()->theta);
+		client->SetTarget(player->GetGameObject()->pos,player->GetGameObject()->theta);	
+		client->InitNetworkController(baseModel,&gameObjectList);
+		playerList = client->GetPlayerList();
 	}
 }
 
@@ -342,32 +340,26 @@ void MainApp::initModels(){
 	if (!result){
 		MessageBox(getMainWnd(), L"Could not initialize the isohedron object.", L"Error", MB_OK);
 	}
-	isohedron->pos = Vector3f(-12,5,-30);
+	//isohedron->pos = Vector3f(-12,5,-30);
 	isohedron->scale = Vector3f(5,5,5);
 	gameObjectList.push_back(isohedron);
 
-	ModelObject *model = new ModelObject();
+	baseModel = new ModelObject();
 
-	result = model->InitializeWithTexture(md3dDevice,L"assets/models/Grunt/grunt_texture.jpg",NULL);
+	result = baseModel->InitializeWithTexture(md3dDevice,L"assets/models/Grunt/grunt_texture.jpg",NULL);
 
 	if(!result){
 		MessageBox(getMainWnd(), L"Could not initialize the model object.", L"Error", MB_OK);
 	}
 
-	result = model->LoadModelFromFBX("assets/models/Grunt/Grunt.fbx");
+	result = baseModel->LoadModelFromFBX("assets/models/Grunt/Grunt.fbx");
 	if (!result){
 		MessageBox(getMainWnd(), L"Could not load in the FBX object.", L"Error", MB_OK);
 	}
-	gameObjectList.push_back(model);
-	model->pos = Vector3f(0,1.5f,0);
+	gameObjectList.push_back(baseModel);
+	baseModel->pos = Vector3f(0,1.5f,0);
 
-	ModelObject *copy = new ModelObject(*model);
-	model->AddReference();
-	copy->pos = Vector3f(4,1.5f,5);
-	gameObjectList.push_back(copy);
-	playerList.push_back(copy);
-
-	player = new GameEntity(*model);
+	player = new GameEntity(*baseModel);
 	player->SetBall(*isohedron);
 	player->SetTerrainRef(*terrain);
 }
@@ -474,6 +466,10 @@ void MainApp::processInput(float dt){
 		playerCamera->SetPosition(*player->pos);
 	}
 
+	if ((GetAsyncKeyState(VK_ESCAPE) & 0x8000)){
+		PostQuitMessage(0);
+	}
+
 	if (mouseInput)
 		MouseInput();
 
@@ -493,6 +489,7 @@ void MainApp::processInput(float dt){
 
 	if ((GetAsyncKeyState('F') & 0x8000)){
 		player->PrimeBall();
+		
 	}
 	else if (player->IsBallPrimed()){
 		player->FireBall();
@@ -562,20 +559,12 @@ void MainApp::updateScene(float dt){
 		break;
 	case SERVER:
 		server->Update(dt);
-		if (server->playerJoined){
-			addNewPlayer();
-			server->playerJoined = false;
-		}
-		updatePlayers(true);
+		server->UpdatePlayers();
 		break;
 	case CLIENT:
 		//send info data to server every 0.1 second
 		client->Update(dt);
-		if (client->playerJoined){
-			addNewPlayer();
-			client->playerJoined = false;
-		}
-		updatePlayers(false);
+		client->UpdatePlayers();
 		break;
 	}
 	player->Update(dt);
@@ -671,54 +660,14 @@ void MainApp::drawModels(D3DXMATRIX &mWVPMatrix){
 	player->GetGameObject()->Render(mWVPMatrix);
 	texShader->RenderTexturing(md3dDevice,player->GetGameObject()->GetIndexCount(),player->GetGameObject()->objMatrix,mView,mProj, player->GetGameObject()->GetTexMatrix(),currentCam->GetPosition(),light[lightType],lightType,player->GetGameObject()->GetDiffuseTexture(),player->GetGameObject()->GetSpecularTexture());
 	
-	for (int i = 0; i < playerList.size(); i++){
-		playerList[i]->Render(mWVPMatrix);
-		texShader->RenderTexturing(md3dDevice,playerList[i]->GetIndexCount(),playerList[i]->objMatrix,mView,mProj, playerList[i]->GetTexMatrix(),currentCam->GetPosition(),light[lightType],lightType,playerList[i]->GetDiffuseTexture(),playerList[i]->GetSpecularTexture());
+	if (gameMode != SINGLE){
+		for (int i = 0; i < playerList->size(); i++){
+			playerList->at(i)->Render(mWVPMatrix);
+			texShader->RenderTexturing(md3dDevice,playerList->at(i)->GetIndexCount(),playerList->at(i)->objMatrix,mView,mProj, playerList->at(i)->GetTexMatrix(),currentCam->GetPosition(),light[lightType],lightType,playerList->at(i)->GetDiffuseTexture(),playerList->at(i)->GetSpecularTexture());
+		}
 	}
 	isohedron->Render(mWVPMatrix);
 	explodeShader->Render(md3dDevice,isohedron->GetIndexCount(),isohedron->objMatrix,mView,mProj,currentCam->GetPosition(),light[lightType],lightType,isohedron->GetExplosiveForce());
-}
-
-void MainApp::addNewPlayer(){
-	bool result;
-
-	ModelObject *newPlayer = new ModelObject();
-
-	result = newPlayer->InitializeWithTexture(md3dDevice,L"assets/models/Grunt/grunt_texture.jpg",NULL);
-
-	if(!result){
-		MessageBox(getMainWnd(), L"Could not initialize the model object.", L"Error", MB_OK);
-	}
-
-	result = newPlayer->LoadModelFromFBX("assets/models/Grunt/Grunt.fbx");
-	if (!result){
-		MessageBox(getMainWnd(), L"Could not load in the FBX object.", L"Error", MB_OK);
-	}
-	gameObjectList.push_back(newPlayer);
-	newPlayer->pos = Vector3f(0,1.5f,0);
-	playerList.push_back(newPlayer);
-}
-
-void MainApp::updatePlayers(bool asServer){
-	if (!asServer){
-		//make sure there is data in the client	
-		if (!client->players){
-			return;
-		}
-		for (int i = 0; i < playerList.size(); i++){
-			playerList[i]->pos = client->players[i].playerData.pos;
-			playerList[i]->theta = client->players[i].playerData.rot;
-		}
-	}
-	else{
-		if (!server->players){
-			return;
-		}
-		for (int i = 0; i < playerList.size(); i++){
-			playerList[i]->pos = server->players[i].playerData.pos;
-			playerList[i]->theta = server->players[i].playerData.rot;
-		}
-	}
 }
 
 void MainApp::animateLights(){

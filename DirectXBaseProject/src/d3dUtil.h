@@ -11,6 +11,13 @@
 #define _WIN32_WINNT   0x0600 // Vista
 #endif
 
+//redefine new operator to track memory leaks
+#if defined(DEBUG) || defined(_DEBUG)
+	#ifndef DBG_NEW      
+		#define DBG_NEW new ( _NORMAL_BLOCK , __FILE__ , __LINE__ )      
+		//#define new DBG_NEW   
+	#endif
+#endif  
  
 // Enable extra D3D debugging in debug builds if using the debug DirectX runtime.  
 // This makes D3D objects work well in the debugger watch window, but slows down 
@@ -23,6 +30,7 @@
 
 #if defined(DEBUG) || defined(_DEBUG)
 #define _CRTDBG_MAP_ALLOC
+
 #include <crtdbg.h>
 #endif
 
@@ -152,6 +160,5 @@ const D3DXCOLOR BEACH_SAND(1.0f, 0.96f, 0.62f, 1.0f);
 const D3DXCOLOR LIGHT_YELLOW_GREEN(0.48f, 0.77f, 0.46f, 1.0f);
 const D3DXCOLOR DARK_YELLOW_GREEN(0.1f, 0.48f, 0.19f, 1.0f);
 const D3DXCOLOR DARKBROWN(0.45f, 0.39f, 0.34f, 1.0f);
-
 
 #endif // D3DUTIL_H

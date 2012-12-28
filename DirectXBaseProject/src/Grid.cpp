@@ -1,6 +1,5 @@
 #include "Grid.h"
 
-
 Grid::Grid(void)
 {
 	maxHeight = 0.0f;

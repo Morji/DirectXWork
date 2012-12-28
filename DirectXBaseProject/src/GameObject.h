@@ -50,7 +50,7 @@ public:
 																									 WCHAR* diffuseMapRV3Tex);
 	void AddReference();
 	int			referenceCount;
-	bool Shutdown();
+	void Shutdown();
 	void Render(D3DXMATRIX worldMatrix);
 
 	ID3D10ShaderResourceView* GetDiffuseTexture();

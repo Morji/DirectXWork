@@ -5,6 +5,8 @@
 #include "d3dApp.h"
 #include <sstream>
 
+#define new DBG_NEW  
+
 LRESULT CALLBACK
 MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -30,6 +32,7 @@ MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 D3DApp::D3DApp(HINSTANCE hInstance)
 {
+
 	mouseInput = mouseRightB = false;
 	stop = remaining = 0;
 	srand ( time(NULL) );//seed the random number generator

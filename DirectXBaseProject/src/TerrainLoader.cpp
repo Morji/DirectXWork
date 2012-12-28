@@ -1,5 +1,6 @@
 #include "TerrainLoader.h"
 
+
 TerrainLoader::TerrainLoader(){
 	height = 0;
 	terrainWidth = terrainDepth = 0;

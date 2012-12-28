@@ -1,5 +1,6 @@
 #include "GameEntity.h"
 
+
 GameEntity::GameEntity(){
 	object = 0;
 	ball = 0;
@@ -22,7 +23,7 @@ void GameEntity::Update(float dt){
 		timeFired+=dt;
 		if (ball->pos.y <= terrain->GetHeight(ball->pos.x,ball->pos.z)){
 			isBallFired = false;
-			ball->StartExplosion(ballForce/5);
+			ball->StartExplosion(ballForce/8);
 		}
 	}
 	else if (isBallRetrieved){		
@@ -41,11 +42,13 @@ void GameEntity::Update(float dt){
 }
 
 void GameEntity::PrimeBall(){
-	ballForce+=PRIME_RATE;
-	if (ballForce > PRIME_LIMIT)
-		ballForce = PRIME_LIMIT;
-	ball->theta += Vector3f(0,ballForce/8,0);//spin ball as it is priming
-	isBallPrimed = true;
+	if (isBallRetrieved){
+		ballForce+=PRIME_RATE;
+		if (ballForce > PRIME_LIMIT)
+			ballForce = PRIME_LIMIT;
+		ball->theta += Vector3f(0,ballForce/8,0);//spin ball as it is priming
+		isBallPrimed = true;
+	}
 }
 
 void GameEntity::FireBall(){
@@ -83,6 +86,10 @@ void GameEntity::SetObject(GameObject &object){
 	this->object = &object;
 	pos = &object.pos;
 	theta = &object.theta;
+}
+
+float GameEntity::GetBallForce(){
+	return this->ballForce;
 }
 
 void GameEntity::SetTerrainRef(Grid &grid){

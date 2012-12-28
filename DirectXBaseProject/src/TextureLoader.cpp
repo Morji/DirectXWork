@@ -1,6 +1,5 @@
 #include "TextureLoader.h"
 
-
 TextureLoader::TextureLoader(void){
 	texture = NULL;
 	

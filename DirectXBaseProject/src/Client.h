@@ -7,7 +7,7 @@
 using namespace std;
 
 #define CLIENT_UPDATE_PERIOD	0.1f		// in seconds
-
+#define SERVER_CONN_WAIT_PERIOD 4.0f
 
 /**
 A client implementation using the windows message loop.
@@ -29,10 +29,16 @@ public:
 	~Client(void);
 	
 private:
+	bool	ConnectToServer();
 	void	SendToServer();						// send client data to the server
 	void	ProcessServerData(); 
 	void	LerpPlayersPositions(float dt);
 	void	ResetPlayerData();
+
+private:
+	int					playerID;				// playerID given by the server
+	bool				connectedToServer;		
+	float				timeSinceLastConnAttempt;
 private:
 	ServerPacket		recvPacket;				// the packet to receive from the server
 	Packet				packet;					// the packet to send to the server

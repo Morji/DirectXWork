@@ -1,6 +1,5 @@
 #include "Isohedron.h"
 
-
 Isohedron::Isohedron(void){
 	explosiveForce = 0;
 	explosiveRate = 0;
@@ -10,7 +9,7 @@ Isohedron::Isohedron(void){
 
 
 Isohedron::~Isohedron(void){
-	Shutdown();
+	//Shutdown();
 }
 
 void Isohedron::Render(D3DXMATRIX worldMatrix){

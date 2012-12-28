@@ -3,7 +3,6 @@
 #include <iostream>
 #include "console.h"
 
-
 void ShowWin32Console()
 {
 	static const WORD MAX_CONSOLE_LINES = 500;

@@ -1,12 +1,11 @@
 #include "ModelObject.h"
 
 
-
 ModelObject::ModelObject(void){
 }
 
 ModelObject::~ModelObject(void){	
-	Shutdown();
+	//Shutdown();
 	if (modelLoader){
 		delete modelLoader;
 		modelLoader = nullptr;

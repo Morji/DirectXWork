@@ -62,7 +62,7 @@ int CUDPSocket::MakeNonBlocking(void)
 	return 1;
 }
 	
-int CUDPSocket::Initialise(void)
+int CUDPSocket::Initialise(socketMode_t socketMode)
 {
 #ifdef USEWINSOCK
 	int error = WSAStartup (0x0202,&m_WSData);
@@ -80,7 +80,15 @@ int CUDPSocket::Initialise(void)
 #endif
 	
 	// socket creation
-	m_Socket = socket(AF_INET, SOCK_DGRAM, 0);
+	switch (socketMode){
+	case UDP:
+		m_Socket = socket(AF_INET, SOCK_DGRAM, 0);
+		break;
+	case TCP:
+		m_Socket = socket(AF_INET, SOCK_STREAM, 0);
+		break;
+	}
+	
 	if(m_Socket<0) 
 	{
 		printf("Cannot open socket \n");
@@ -133,6 +141,22 @@ int CUDPSocket::SendTo(char * Buffer, sockaddr_in& address)
 	int n = sendto(m_Socket, Buffer, 100, 0, (struct sockaddr *)&address, m_SocketAddressSize);
 	
 	return n;	
+}
+
+int CUDPSocket::SendTo(char * Buffer, sockaddr& address)
+{
+	int n = sendto(m_Socket, Buffer, 100, 0, &address, m_SocketAddressSize);
+	
+	return n;	
+}
+
+sockaddr *CUDPSocket::GetTCPDestAddress(){
+	return &you;
+}
+
+int CUDPSocket::GetSASize(){
+	int size = sizeof(you);
+	return size;
 }
 
 sockaddr_in CUDPSocket::GetDestinationAddress(void)

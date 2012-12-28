@@ -29,12 +29,15 @@ public:
 
 	GameObject	*GetGameObject();
 
+
 	void Update(float dt); //update loop for this entity - gets passed in the delta time to use for updates
 
 	void PrimeBall(); //prime ball - every time this get's called it increases the force at which the ball is thrown - up to a limit
 	bool IsBallPrimed();
 	void FireBall();	
 	void RetrieveBall();
+
+	float GetBallForce();
 
 	~GameEntity(void);
 

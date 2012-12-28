@@ -28,10 +28,12 @@ private:
 	void			DisplayServerInfo();
 
 	void			AddClient(ClientInfo &clientInfo);
-	bool			ClientExists(sockaddr_in &identifier);	//checks wether a client with this address exists in the collection of clients
+	bool			ClientExists(int ID);	//checks wether a client with this ID exists in the collection of clients
 	void			UpdateServer();
-	void			UpdateClient(ClientInfo &clientInfo);	//updates the client associated with the current address
-	
+	void			UpdateClient(int position,PlayerData &data);	//updates the client associated with the current address
+	void			DisconnectClientByPos(int position);
+	void			DisconnectClientBySocket(SOCKET socket);
+
 	void			LerpPlayersPositions(float dt);
 	void			ResetPlayerData();
 

@@ -85,18 +85,16 @@ bool GameObject::InitializeWithMultiTexture(ID3D10Device* device, WCHAR* specula
 }
 
 //The Shutdown function will call the shutdown functions for the vertex and index buffers.
-bool GameObject::Shutdown(){
+void GameObject::Shutdown(){
 	// Release the model texture.
 	if (referenceCount == 0){
 		ReleaseTexture();
 
 		// Release the vertex and index buffers.
 		ShutdownBuffers();
-
-		//return true;
 	}
-	referenceCount--;
-	return true;
+	else
+		referenceCount--;
 }
 
 //Render is called from the GraphicsClass::Render function. This function calls RenderBuffers to put the vertex and index buffers on the graphics pipeline so the color shader will be able to render them.

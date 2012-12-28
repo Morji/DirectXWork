@@ -8,8 +8,8 @@
 #define SERVERIP "127.0.0.1"
 
 //the port of the server to connect to
-#define SERVERPORT 5555
-#define CLIENTPORT 5556
+#define SERVERPORT		5555
+#define CLIENTPORT		5556
 
 #define WM_SOCKET (WM_USER+1)	//handle socket messages in windows message loops
 
@@ -44,6 +44,10 @@ typedef struct ClientData{
 		clientID = -1;
 	}
 
+	ClientData(int id){
+		this->clientID = id;
+	}
+
 	ClientData(PlayerData &data, int id){
 		playerData = data;
 		clientID = id;
@@ -54,14 +58,18 @@ typedef struct ClientData{
 to keep a track of the clients and update each ones info
 correctly - it is used internally and not sent over the network*/
 typedef struct ClientInfo{
-	sockaddr_in clientAddress;
+	sockaddr	clientAddress;
+	SOCKET		serviceSocket;
 	ClientData	client;
+	float		timeSinceLastPacket;
 
 	ClientInfo(){}
 
-	ClientInfo(sockaddr_in &clientAddress,ClientData &data){
+	ClientInfo(SOCKET serviceSocket,sockaddr &clientAddress,ClientData &data){
+		this->serviceSocket = serviceSocket;
 		this->clientAddress = clientAddress;
 		this->client		= data;
+		this->timeSinceLastPacket = 0.0f;
 	}
 }ClientInfo;
 
@@ -70,7 +78,18 @@ struct Packet{
 	PlayerData	data;
 
 	Packet(){
-		ID = 0;
+		ID = -1;
+	}
+};
+
+//Connection packet - sent between server and clients to establish a connection over TCP or inform that a client has disconnected
+struct ConnPacket{
+	bool	connected;
+	int		clientID;
+
+	ConnPacket(){
+		connected = false;
+		clientID = -1;
 	}
 };
 
