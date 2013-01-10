@@ -68,7 +68,7 @@ void Server::DisplayServerInfo(){
 
 void Server::AddClient(ClientInfo &clientInfo){
 	//add client to vector of client info
-	cout << "New client connected! "; //<< inet_ntoa(clientInfo.clientAddress.) << endl;
+	cout << "New client connected! " << endl; //<< inet_ntoa(clientInfo.clientAddress.) << endl;
 	clientVector.push_back(clientInfo);
 	AddNewPlayer();
 	ResetPlayerData();//new player has joined so reset the player data
@@ -78,13 +78,22 @@ void Server::UpdateClient(int position,PlayerData &data){
 	clientVector[position].client.playerData.pos = data.pos;
 	clientVector[position].client.playerData.rot = data.rot;
 	clientVector[position].timeSinceLastPacket = 0.0f;	
+
+	players[position].playerData.pos = data.pos;
 	
 }
 
 void Server::LerpPlayersPositions(float dt){
+	if (dt > 1.0f)
+		dt = 1.0f;
 	for (int i = 0; i < clientVector.size(); i++){
 		D3DXVec3Lerp(&players[i].playerData.pos,&players[i].playerData.pos,&clientVector[i].client.playerData.pos,dt);
 		D3DXVec3Lerp(&players[i].playerData.rot,&players[i].playerData.rot,&clientVector[i].client.playerData.rot,dt);
+
+		/*D3DXMATRIX rotMatrix;
+		D3DXMatrixRotationY(&rotMatrix, players[i].playerData.rot.y);
+		players[i].playerData.pos.x += rotMatrix.m[2][0]*10.0f*dt;
+		players[i].playerData.pos.z += rotMatrix.m[2][2]*10.0f*dt;*/
 	}
 }
 
@@ -127,13 +136,11 @@ void Server::DisconnectClientByPos(int position){
 
 	closesocket(clientVector[position].serviceSocket);
 
-	clientVector.erase(clientVector.begin() + position);
-	
+	clientVector.erase(clientVector.begin() + position);	
 	
 	numConnections--;
 	DeletePlayer(connPacket.clientID-1);
 	ResetPlayerData();
-	closesocket (clientVector[position].serviceSocket);
 	memset(msgBuffer, 0x0, CLIENT_BUFFERSIZE);//clear the buffer
 	memcpy(msgBuffer,&connPacket,sizeof(ConnPacket));
 	for (int i = 0; i < numConnections; i++){
@@ -172,8 +179,9 @@ void Server::Update(float dt){
 		UpdateServer();
 		millis = 0.0f;
 	}
-	if (players)
+	if (players){
 		LerpPlayersPositions(millis);
+	}
 }
 
 void Server::ResetPlayerData(){

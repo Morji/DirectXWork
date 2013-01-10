@@ -30,6 +30,7 @@ using namespace std;
 
 enum gameMode_t {SINGLE,CLIENT,SERVER};
 
+
 class MainApp : public D3DApp
 {
 public:
@@ -448,19 +449,19 @@ void MainApp::processInput(float dt){
 	//else if we are using the player camera switch input to player movement
 	else{
 		if (GetAsyncKeyState('W')){
-			player->GetGameObject()->MoveFacing(10*dt);
+			player->GetGameObject()->MoveFacing(SPEED*dt);
 			player->pos->y = terrain->GetHeight(player->pos->x,player->pos->z) + 1.0f;
 		}
 		if (GetAsyncKeyState('S')){
-			player->GetGameObject()->MoveFacing(-10*dt);
+			player->GetGameObject()->MoveFacing(-SPEED*dt);
 			player->pos->y = terrain->GetHeight(player->pos->x,player->pos->z) + 1.0f;		
 		}
 		if (GetAsyncKeyState('A')){
-			player->GetGameObject()->MoveStrafe(-10*dt);
+			player->GetGameObject()->MoveStrafe(-SPEED*dt);
 			player->pos->y = terrain->GetHeight(player->pos->x,player->pos->z) + 1.0f;
 		}
 		if (GetAsyncKeyState('D')){
-			player->GetGameObject()->MoveStrafe(10*dt);
+			player->GetGameObject()->MoveStrafe(SPEED*dt);
 			player->pos->y = terrain->GetHeight(player->pos->x,player->pos->z) + 1.0f;
 		}
 		playerCamera->SetPosition(*player->pos);

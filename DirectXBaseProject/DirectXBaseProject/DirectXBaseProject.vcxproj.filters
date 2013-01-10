@@ -19,9 +19,6 @@
     <Filter Include="Source Files\Objects">
       <UniqueIdentifier>{30a2e5bc-5217-4456-a676-81111c2e52cb}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\Shaders">
-      <UniqueIdentifier>{974459a6-6fdd-472f-b4f2-0aa4e8a761b8}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Shaders">
       <UniqueIdentifier>{13a81260-a274-49f6-8caf-c2520b5ffa4b}</UniqueIdentifier>
     </Filter>
@@ -51,6 +48,9 @@
     </Filter>
     <Filter Include="Source Files\GameEntities">
       <UniqueIdentifier>{90bca586-0ee3-4119-92af-6c39c4de22b8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Shaders">
+      <UniqueIdentifier>{974459a6-6fdd-472f-b4f2-0aa4e8a761b8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

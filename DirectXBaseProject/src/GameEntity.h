@@ -9,7 +9,8 @@
 
 #define GRAVITY 1.0f	//rate at which ball decelarates
 #define PRIME_LIMIT 2.0f	//maximum amount to which a ball can be primed for fire
-#define PRIME_RATE  0.02f;	//prime amount that gets added to the ball at each loop while priming
+#define PRIME_RATE  0.02f	//prime amount that gets added to the ball at each loop while priming
+#define SPEED	10.0f
 /*
 Class to represent a playable game object in this application
 */

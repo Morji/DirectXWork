@@ -95,6 +95,8 @@ void Client::Update(float dt){
 }
 
 void Client::LerpPlayersPositions(float dt){
+	if (dt > 1.0f)
+		dt = 1.0f;
 	for (int i = 0; i < numPlayers; i++){		
 		D3DXVec3Lerp(&players[i].playerData.pos,&players[i].playerData.pos,&currentPlayerData[i].playerData.pos,dt);
 		D3DXVec3Lerp(&players[i].playerData.rot,&players[i].playerData.rot,&currentPlayerData[i].playerData.rot,dt);
