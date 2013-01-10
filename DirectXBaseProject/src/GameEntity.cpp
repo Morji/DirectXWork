@@ -39,7 +39,7 @@ void GameEntity::Update(float dt){
 		timeFired+=dt;
 		if (ball->pos.y <= terrain->GetHeight(ball->pos.x,ball->pos.z)){
 			isBallFired = false;
-			ball->StartExplosion(ballForce/8);
+			ball->StartExplosion(ballForce/5);
 		}
 	}
 	else if (isBallRetrieved){		

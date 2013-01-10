@@ -8,6 +8,7 @@ Client::Client(void){
 	timeSinceLastConnAttempt = 0.0f;
 	playerID = -1;
 	mHwnd = 0;
+	lerpAmount = CLIENT_UPDATE_PERIOD;
 	connectedToServer = false;
 }
 
@@ -80,13 +81,18 @@ bool Client::ConnectToServer(){
 
 void Client::Update(float dt){
 	millis+= dt;
+	framesPerUpdate++;
 	if (connectedToServer){
 		if (millis >= CLIENT_UPDATE_PERIOD){
 			SendToServer();
+			lerpAmount = 1.0f/framesPerUpdate;			
+			framesPerUpdate = 0;
 			millis = 0.0f;
+			lerpVal = 0.0f;
 		}
 		if (players){
-			LerpPlayersPositions(millis);
+			lerpVal += lerpAmount;
+			LerpPlayersPositions(lerpVal);
 		}
 	}
 	else{
@@ -140,6 +146,17 @@ void Client::ProcessMessage(WPARAM msg, LPARAM lParam){
 				DeletePlayer(i);
 			}
 			closesocket(tcpSocket.GetSocket());
+			WSACleanup();
+			if (!tcpSocket.Initialise(TCP)){
+				cout << "Failure initializing socket" << endl;
+				return;
+			}
+			/*if (!tcpSocket.Bind(CLIENTPORT)){
+				cout << "Failure binding port" << endl;
+				return;
+			}*/
+			tcpSocket.SetDestinationAddress(serverIP,portNum-1);
+			WSAAsyncSelect (tcpSocket.GetSocket(),*mHwnd,WM_SOCKET,(FD_CLOSE | FD_CONNECT | FD_READ ));
 			connectedToServer = false;
 		}
 		return;

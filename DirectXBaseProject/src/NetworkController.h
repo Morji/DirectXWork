@@ -45,6 +45,9 @@ protected:
 	CUDPSocket			tcpSocket;
 
 	float				millis;					// Keep track time to update network info at regular intervals
+	float				lerpVal;
+	float				lerpAmount;				// Amount to lerp each frame
+	int					framesPerUpdate;		// How many frames were completed before the next network update
 
 	std::vector<ModelObject*>	mPlayerVector;
 	std::list<GameObject*>		*masterObjectList;

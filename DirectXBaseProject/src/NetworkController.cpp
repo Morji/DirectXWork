@@ -8,6 +8,8 @@ NetworkController::NetworkController(void){
 	mBaseModel = 0;
 	isMoving = 0;
 	masterObjectList = 0;
+	framesPerUpdate = 0;
+	lerpAmount = lerpVal = 0.0f;
 }
 
 
@@ -22,8 +24,6 @@ NetworkController::~NetworkController(void){
 	mPlayerVector.clear();
 	masterObjectList = nullptr;
 	mBaseModel = nullptr;
-	closesocket(tcpSocket.GetSocket());
-	closesocket(socket.GetSocket());
 	
 }
 

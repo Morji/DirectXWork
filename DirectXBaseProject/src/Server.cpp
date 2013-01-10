@@ -5,6 +5,7 @@ Server::Server(){
 	numConnections = 0;
 	millis = 0;
 	serverPlayerData.clientID = 0;
+	lerpAmount = SERVER_UPDATE_PERIOD;
 }
 
 Server::~Server(){
@@ -177,12 +178,18 @@ void Server::DisconnectClientBySocket(SOCKET socket){
 //Updates the server every update period
 void Server::Update(float dt){
 	millis+= dt;
+	framesPerUpdate++;
 	if (millis >= SERVER_UPDATE_PERIOD){
 		UpdateServer();
+		lerpAmount = 1.0f/framesPerUpdate;		
+		framesPerUpdate = 0;
 		millis = 0.0f;
+		lerpVal = 0.0f;
+
 	}
 	if (players){
-		LerpPlayersPositions(millis);
+		lerpVal += lerpAmount;
+		LerpPlayersPositions(lerpVal);
 	}
 }
 
