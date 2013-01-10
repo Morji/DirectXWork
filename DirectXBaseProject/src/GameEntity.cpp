@@ -6,6 +6,7 @@ GameEntity::GameEntity(){
 	ball = 0;
 	pos = 0;
 	theta = 0;
+	isMoving = false;
 }
 
 GameEntity::GameEntity(GameObject &object){
@@ -13,7 +14,22 @@ GameEntity::GameEntity(GameObject &object){
 	this->object = &object;
 	pos = &object.pos;
 	theta = &object.theta;
+	isMoving = false;
 	ResetBall();
+}
+
+void GameEntity::MoveFacing(float speed){
+	if (object){
+		object->MoveFacing(speed);
+		isMoving = true;
+	}
+}
+
+void GameEntity::MoveStrafe(float speed){
+	if (object){
+		object->MoveStrafe(speed);
+		isMoving = true;
+	}
 }
 
 void GameEntity::Update(float dt){
@@ -39,6 +55,7 @@ void GameEntity::Update(float dt){
 			RetrieveBall();
 		}
 	}
+	isMoving = false;
 }
 
 void GameEntity::PrimeBall(){

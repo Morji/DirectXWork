@@ -13,15 +13,16 @@
 
 #define WM_SOCKET (WM_USER+1)	//handle socket messages in windows message loops
 
-#define SERVER_BUFFERSIZE		(140)	//at least sizeof(ServerPacket) + maxPlayers*sizeof(ClientData)
+#define SERVER_BUFFERSIZE		(150)	//at least sizeof(ServerPacket) + maxPlayers*sizeof(ClientData)
 #define CLIENT_BUFFERSIZE		(80)	//at least sizeof(ServerPacket) + maxPlayers*sizeof(ClientData)
 #define MSG_CONNECTED			(0x41)	//A
 #define NUMCONN					(5)
 
 ///REMEMBER - MAX UDP PACKET SIZE IS ~ 512 BYTES TO MAKE SURE IT DOESN'T GET SPLIT UP
 typedef struct PlayerData{
-	Vector3f	pos;	//12 bytes
-	Vector3f	rot;	//12 bytes
+	Vector3f	pos;		// 12 bytes
+	Vector3f	rot;		// 12 bytes
+	bool		isMoving;   // 1 byte
 
 	PlayerData(){
 		pos = Vector3f(0,1.5f,0);
@@ -37,7 +38,7 @@ typedef struct PlayerData{
 the collective client information to each client. It is sent over the network, so it is
 kept as small as possible*/
 typedef struct ClientData{
-	PlayerData	playerData;	//24 bytes
+	PlayerData	playerData;	//25 bytes
 	int			clientID;	//4 bytes
 	
 	ClientData(){		
@@ -94,7 +95,6 @@ struct ConnPacket{
 };
 
 struct ServerPacket{
-	short				numPlayers; // 2 bytes
 	int					ID;			// 4 bytes
 };
 

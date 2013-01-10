@@ -6,6 +6,7 @@ NetworkController::NetworkController(void){
 	millis = 0.0f;
 	players = 0;
 	mBaseModel = 0;
+	isMoving = 0;
 	masterObjectList = 0;
 }
 
@@ -13,6 +14,7 @@ NetworkController::NetworkController(void){
 NetworkController::~NetworkController(void){
 	rotToSend = nullptr;
 	posToSend = nullptr;
+	isMoving = nullptr;
 	if (players){
 		delete [] players;
 		players = nullptr;
@@ -63,7 +65,9 @@ void NetworkController::InitNetworkController(ModelObject *baseModel, std::list<
 	mBaseModel = baseModel;
 }
 
-void NetworkController::SetTarget(Vector3f &posToTrack, Vector3f &rotToTrack){
+void NetworkController::SetTarget(Vector3f &posToTrack, Vector3f &rotToTrack, bool &movementToTrack){
 	posToSend = &posToTrack;
 	rotToSend = &rotToTrack;
+	isMoving = &movementToTrack;
+
 }

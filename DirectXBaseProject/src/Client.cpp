@@ -7,6 +7,7 @@ Client::Client(void){
 	currentPlayerData = 0;
 	timeSinceLastConnAttempt = 0.0f;
 	playerID = -1;
+	mHwnd = 0;
 	connectedToServer = false;
 }
 
@@ -16,6 +17,7 @@ Client::~Client(void){
 		delete [] currentPlayerData;
 		currentPlayerData = nullptr;
 	}
+	mHwnd = nullptr;
 	WSACleanup();
 }
 
@@ -36,6 +38,8 @@ bool Client::Initialize(HWND hwnd){
 
 	WSAAsyncSelect (socket.GetSocket(),hwnd,WM_SOCKET,( FD_READ ));
 	WSAAsyncSelect (tcpSocket.GetSocket(),hwnd,WM_SOCKET,(FD_CLOSE | FD_CONNECT | FD_READ ));
+
+	mHwnd = &hwnd;
 
 	if (WSAGetLastError() != 0)
 		cout << "Client error message: " << WSAGetLastError() << endl;
@@ -126,8 +130,18 @@ void Client::ResetPlayerData(){
 void Client::ProcessMessage(WPARAM msg, LPARAM lParam){
 	if (WSAGETSELECTERROR(lParam)){
 		cout << "Socket error\n";
-		cout << WSAGetLastError() << "\n";
-		cout << WSAGETSELECTERROR(lParam) << "\n";
+		if (WSAGetLastError() != 0)
+			cout << WSAGetLastError() << "\n";
+		cout << "Socket select error " << WSAGETSELECTERROR(lParam) << "\n";
+		if (WSAGETSELECTERROR(lParam) == WSAECONNABORTED){
+			cout << "Disconnected from server! Proceeding in single player, attempting to re-establish connection" << endl;
+			//delete all players from the game
+			for (int i = 0; i < playerID; i++){
+				DeletePlayer(i);
+			}
+			closesocket(tcpSocket.GetSocket());
+			connectedToServer = false;
+		}
 		return;
 	}
 	
@@ -142,8 +156,18 @@ void Client::ProcessMessage(WPARAM msg, LPARAM lParam){
 		case FD_CLOSE:{
 			
 			cout << "Disconnected from server! Proceeding in single player, attempting to re-establish connection" << endl;
+			//delete all players from the game
+			for (int i = 0; i < playerID; i++){
+				DeletePlayer(i);
+			}
 			closesocket(tcpSocket.GetSocket());
-			tcpSocket.Initialise(TCP);
+			/*if (!tcpSocket.Initialise(TCP)){
+				cout << "Failure initializing socket" << endl;
+				break;
+			}
+
+			tcpSocket.SetDestinationAddress(serverIP,portNum-1);
+			WSAAsyncSelect (tcpSocket.GetSocket(),*mHwnd,WM_SOCKET,(FD_CLOSE | FD_CONNECT | FD_READ ));*/
 			connectedToServer = false;
 			break;}
 
@@ -225,6 +249,7 @@ void Client::SendToServer(){
 	packet.ID = playerID;
 	packet.data.pos = *posToSend;
 	packet.data.rot = *rotToSend;
+	packet.data.isMoving = *isMoving;
 	memset(msgBuffer, 0x0, CLIENT_BUFFERSIZE);//clear the buffer
 	memcpy(msgBuffer, &packet , sizeof(Packet));
 	socket.Send(msgBuffer);

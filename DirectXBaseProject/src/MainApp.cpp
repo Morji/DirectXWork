@@ -297,7 +297,7 @@ void MainApp::initServer(){
 		cout << "Server Failed to start" << endl;
 		return;
 	}
-	server->SetTarget(player->GetGameObject()->pos,player->GetGameObject()->theta);	
+	server->SetTarget(player->GetGameObject()->pos,player->GetGameObject()->theta,player->isMoving);	
 	server->InitNetworkController(baseModel,&gameObjectList);
 
 	playerList = server->GetPlayerList();
@@ -309,7 +309,7 @@ void MainApp::initClient(){
 			cout << "Client failed to start" << endl;
 			return;
 		}
-		client->SetTarget(player->GetGameObject()->pos,player->GetGameObject()->theta);	
+		client->SetTarget(player->GetGameObject()->pos,player->GetGameObject()->theta,player->isMoving);	
 		client->InitNetworkController(baseModel,&gameObjectList);
 		playerList = client->GetPlayerList();
 	}
@@ -449,19 +449,19 @@ void MainApp::processInput(float dt){
 	//else if we are using the player camera switch input to player movement
 	else{
 		if (GetAsyncKeyState('W')){
-			player->GetGameObject()->MoveFacing(SPEED*dt);
+			player->MoveFacing(SPEED*dt);
 			player->pos->y = terrain->GetHeight(player->pos->x,player->pos->z) + 1.0f;
 		}
 		if (GetAsyncKeyState('S')){
-			player->GetGameObject()->MoveFacing(-SPEED*dt);
+			player->MoveFacing(-SPEED*dt);
 			player->pos->y = terrain->GetHeight(player->pos->x,player->pos->z) + 1.0f;		
 		}
 		if (GetAsyncKeyState('A')){
-			player->GetGameObject()->MoveStrafe(-SPEED*dt);
+			player->MoveStrafe(-SPEED*dt);
 			player->pos->y = terrain->GetHeight(player->pos->x,player->pos->z) + 1.0f;
 		}
 		if (GetAsyncKeyState('D')){
-			player->GetGameObject()->MoveStrafe(SPEED*dt);
+			player->MoveStrafe(SPEED*dt);
 			player->pos->y = terrain->GetHeight(player->pos->x,player->pos->z) + 1.0f;
 		}
 		playerCamera->SetPosition(*player->pos);

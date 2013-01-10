@@ -17,19 +17,23 @@ Class to represent a playable game object in this application
 class GameEntity{
 public:
 	GameEntity(void);
-
-	//quick access variables which are bound to game object parameters
-	Vector3f		*pos;		
-	Vector3f		*theta;
-
 	GameEntity(GameObject &object); //create this game entity and set it's game object reference
+	//quick access variables which are bound to game object parameters
+	Vector3f	*pos;		
+	Vector3f	*theta;
+
+	bool		isMoving;
+
+	void MoveFacing(float speed);
+	void MoveStrafe(float speed);
+
+	
 	void SetObject(GameObject &object); //set this game entity's object reference
 
 	void SetBall(Isohedron	&ball);	//set the ball which this game entity will use
 	void SetTerrainRef(Grid	&grid);	//set the terrain reference that this entity will use
 
 	GameObject	*GetGameObject();
-
 
 	void Update(float dt); //update loop for this entity - gets passed in the delta time to use for updates
 

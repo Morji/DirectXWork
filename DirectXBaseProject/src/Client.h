@@ -42,6 +42,7 @@ private:
 private:
 	ServerPacket		recvPacket;				// the packet to receive from the server
 	Packet				packet;					// the packet to send to the server
+	HWND				*mHwnd;
 
 	char				msgBuffer[CLIENT_BUFFERSIZE];	// a buffer...for messages...what'd you expect?
 	char				packetBuffer[SERVER_BUFFERSIZE];

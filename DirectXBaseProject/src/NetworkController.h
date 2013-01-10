@@ -18,7 +18,7 @@ class NetworkController
 public:
 	NetworkController(void);
 
-	void		SetTarget(Vector3f &posToTrack, Vector3f &rotToTrack);	// sets the player to send updates about when sending data to server
+	void		SetTarget(Vector3f &posToTrack, Vector3f &rotToTrack, bool &movementToTrack);	// sets the player to send updates about when sending data to server
 
 	ClientData	*players;			// an array to hold the client data coming from the server - public for fast access
 
@@ -40,6 +40,7 @@ protected:
 protected:
 	Vector3f			*posToSend;
 	Vector3f			*rotToSend;
+	bool				*isMoving;
 	CUDPSocket			socket;
 	CUDPSocket			tcpSocket;
 

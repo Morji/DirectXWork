@@ -77,10 +77,10 @@ void Server::AddClient(ClientInfo &clientInfo){
 void Server::UpdateClient(int position,PlayerData &data){
 	clientVector[position].client.playerData.pos = data.pos;
 	clientVector[position].client.playerData.rot = data.rot;
+	clientVector[position].client.playerData.isMoving = data.isMoving;
 	clientVector[position].timeSinceLastPacket = 0.0f;	
 
-	players[position].playerData.pos = data.pos;
-	
+	players[position].playerData.isMoving = data.isMoving;
 }
 
 void Server::LerpPlayersPositions(float dt){
@@ -90,10 +90,12 @@ void Server::LerpPlayersPositions(float dt){
 		D3DXVec3Lerp(&players[i].playerData.pos,&players[i].playerData.pos,&clientVector[i].client.playerData.pos,dt);
 		D3DXVec3Lerp(&players[i].playerData.rot,&players[i].playerData.rot,&clientVector[i].client.playerData.rot,dt);
 
-		/*D3DXMATRIX rotMatrix;
-		D3DXMatrixRotationY(&rotMatrix, players[i].playerData.rot.y);
-		players[i].playerData.pos.x += rotMatrix.m[2][0]*10.0f*dt;
-		players[i].playerData.pos.z += rotMatrix.m[2][2]*10.0f*dt;*/
+		/*if (players[i].playerData.isMoving){
+			D3DXMATRIX rotMatrix;
+			D3DXMatrixRotationY(&rotMatrix, players[i].playerData.rot.y);
+			players[i].playerData.pos.x += rotMatrix.m[2][0]*10.0f*dt;
+			players[i].playerData.pos.z += rotMatrix.m[2][2]*10.0f*dt;
+		}*/
 	}
 }
 
@@ -103,12 +105,12 @@ void Server::UpdateServer(){
 	memset(packetBuffer, 0x0, SERVER_BUFFERSIZE);//clear the buffer
 
 	serverPacket.ID = ++serverPacketNum;
-	serverPacket.numPlayers = numConnections+1;//server is also playing as well
 	memcpy(packetBuffer, &serverPacket , sizeof(ServerPacket));//put the server packet info in first
 
 	serverPlayerData.clientID		= 0;
 	serverPlayerData.playerData.pos = *posToSend;
 	serverPlayerData.playerData.rot = *rotToSend;
+	serverPlayerData.playerData.isMoving = *isMoving;
 	//put the server player info into the packet - ID of 0
 	memcpy(packetBuffer+sizeof(ServerPacket),&serverPlayerData,sizeof(ClientData));
 
